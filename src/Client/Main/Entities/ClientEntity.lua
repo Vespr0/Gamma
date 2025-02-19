@@ -13,6 +13,7 @@ local Game = require(ReplicatedStorage.Utility.Game)
 local Animator = require(script.Parent.Animator)
 local TypeRig = require(ReplicatedStorage.Types.TypeRig)
 local Motor6DManager = require(script.Parent.Motor6DManager)
+local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 ClientEntity.Instances = {}
@@ -24,6 +25,8 @@ function ClientEntity.Get(id: number|string)
 end
 
 function ClientEntity.new(rig: TypeRig.Rig)
+	if not EntityUtility.IsHealthy(rig) then warn(`Rig "{rig.Name}" is not alive, cannot create client entity instance`) return end
+
 	local id = rig:GetAttribute("ID") :: number
 	local self = setmetatable(BaseEntity.new(rig,id), ClientEntity)
 

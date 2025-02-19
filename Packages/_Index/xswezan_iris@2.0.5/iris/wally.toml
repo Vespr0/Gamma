@@ -1,0 +1,9 @@
+[package]
+name = "xswezan/iris"
+description = "Iris port to wally"
+authors = ["Michael-48"]
+version = "2.0.5"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]

@@ -9,8 +9,11 @@ local RunService = game:GetService("RunService")
 -- Modules
 local Signal = require(ReplicatedStorage.Packages.signal)
 local Game = require(ReplicatedStorage.Utility.Game)
+local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 
 function BaseEntity.new(rig,id: number)
+	if not EntityUtility.IsHealthy(rig) then warn(`Rig "{rig.Name}" is not alive, cannot create base entity instance`) return end
+
 	local self = setmetatable({}, BaseEntity)
 
 	assert(rig, "Rig is nil")

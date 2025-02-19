@@ -34,7 +34,9 @@ function Loading.LoadModules(folder,blacklist)
 			if required.Dependencies then
 				for _,d in required.Dependencies do
 					if not Loading.Initialized[d] then
+						-- TODO: if the module in the dependencies doesnt exist this will lead to an endless loop
 						print(`{module.Name} depends on {d}, putting it at the bottom of the queue`)
+						task.wait(0.1)
 						table.insert(modules,module)
 						return
 					end

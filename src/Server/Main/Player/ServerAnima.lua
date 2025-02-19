@@ -38,6 +38,15 @@ function ServerAnima:setupProperties()
 	self.player.DevEnableMouseLock = false
 end
 
+function ServerAnima:setupCharacterLoading()
+	local rig = AssetsDealer.Get("Rigs","Human","Clone")
+	rig.Name = self.player.Name
+
+	self.entity = ServerEntity.new(rig)
+
+	self.player.Character = rig
+end
+
 function ServerAnima:setup()
 	-- Fire global event when a new entity is added
 	ServerAnima.GlobalAdded:Fire(self)
@@ -45,21 +54,8 @@ function ServerAnima:setup()
 	ServerAnima.Instances[self.userId] = self
 	-- Setup player-specific properties
 	self:setupProperties()
-	
-	-- Manually load character
-	self.player:LoadCharacter()
-
-	-- if self.character then
-	-- 	ServerEntity.new(self.character)
-	-- end
-	-- Listen for new characters being added
-	self.events.CharacterAdded:Connect(function()
-		self.entity = ServerEntity.new(self.character,self.player)
-	
-		self.entity.events.Died:Connect(function()
-			--self.player:LoadCharacter()
-		end)
-	end)
+	-- Setup character loading
+	self:setupCharacterLoading()
 end
 
 function ServerAnima:destroy()
@@ -73,9 +69,9 @@ end
 
 function ServerAnima.Init()
 	-- Setup starter character
-	local rig = AssetsDealer.Get("Rigs","Human","Clone")
-	rig.Parent = game:GetService("StarterPlayer")
-	rig.Name = "StarterCharacter"
+	-- local rig = AssetsDealer.Get("Rigs","Human","Clone")
+	-- rig.Parent = game:GetService("StarterPlayer")
+	-- rig.Name = "StarterCharacter"
 	
 	-- Setup existing players
 	for _, player in Players:GetPlayers() do

@@ -5,7 +5,7 @@ registry = "test"
 [[package]]
 name = "andrea/repo"
 version = "0.1.0"
-dependencies = [["TableUtil", "sleitnick/table-util@1.2.1"], ["fusion", "mattschrubb/fusion@1.2.5"], ["rblx-nonvoxel-greedy-meshing", "royal0959/rblx-nonvoxel-greedy-meshing@1.0.3"], ["signal", "sleitnick/signal@1.5.0"], ["trove", "cody-nelson/trove@0.0.1"]]
+dependencies = [["TableUtil", "sleitnick/table-util@1.2.1"], ["fusion", "mattschrubb/fusion@1.2.5"], ["iris", "xswezan/iris@2.0.5"], ["rblx-nonvoxel-greedy-meshing", "royal0959/rblx-nonvoxel-greedy-meshing@1.0.3"], ["signal", "sleitnick/signal@1.5.0"], ["trove", "cody-nelson/trove@0.0.1"]]
 
 [[package]]
 name = "cody-nelson/trove"
@@ -35,4 +35,9 @@ dependencies = []
 [[package]]
 name = "sleitnick/table-util"
 version = "1.2.1"
+dependencies = []
+
+[[package]]
+name = "xswezan/iris"
+version = "2.0.5"
 dependencies = []

@@ -10,12 +10,15 @@ ServerEntity.__index = ServerEntity
 -- Modules
 local Signal = require(ReplicatedStorage.Packages.signal)
 local Game = require(ReplicatedStorage.Utility.Game)
+local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 -- Variables
 ServerEntity.Instances = {}
 ServerEntity.GlobalAdded = Signal.new()
 ServerEntity.Counter = 0
 
 function ServerEntity.new(rig)
+	if not EntityUtility.IsHealthy(rig) then warn(`Rig "{rig.Name}" is not alive, cannot create server entity instance`) return end
+
 	ServerEntity.Counter += 1
 	local id = ServerEntity.Counter
 	local self = setmetatable(BaseEntity.new(rig,id), ServerEntity)

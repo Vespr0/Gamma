@@ -42,10 +42,11 @@ function ServerBackpack:listen()
     end)
 
     local function debugItems()
+        warn("Debugging Items")
         self:addTool(ItemUtility.GetToolFromName("Brick", true))
         self:addTool(ItemUtility.GetToolFromName("Sword", true))    
     end
-    debugItems()
+    --debugItems()
     self.anima.events.CharacterAdded:Connect(function()
         debugItems()
     end)
@@ -74,6 +75,7 @@ function ServerBackpack:addTool(tool: Tool)
     
     -- Put the tool in the backpack
     tool.Parent = self.tools
+    warn(tool:GetFullName())
 
     ServerBackpack.ItemID += 1
     tool:SetAttribute("ID", ServerBackpack.ItemID)

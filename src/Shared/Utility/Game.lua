@@ -10,6 +10,7 @@ Game.Folders = {
     Map = workspace:WaitForChild("Map"),
 	Structures = workspace:WaitForChild("Map"):WaitForChild("Structures"),
 	Entities = workspace:WaitForChild("Entities"),
+	Voxels = workspace:WaitForChild("Map"):WaitForChild("Voxels"),
 }
 -- Tags
 Game.Tags = {
@@ -28,6 +29,12 @@ Game.Limbs = {
 	Head = "Head",
 	RightLeg = "Right Leg",
 	LeftLeg = "Left Leg"
+}
+-- Generation
+Game.Generation = {
+	WORLD_SIZE = 1000,
+	PART_WIDTH = 10,
+	PART_HEIGHT = 2
 }
 
 return Game

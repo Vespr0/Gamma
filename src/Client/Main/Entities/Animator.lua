@@ -20,7 +20,7 @@ Animator.GlobalAdded = Signal.new()
 
 -- Constants for animation fading factors
 local FADING_IN_FACTOR = 1 / 3
-local FADING_OUT_FACTOR = 1 / 2
+local FADING_OUT_FACTOR = 1 / 3
 
 function Animator.Get(key)
 	assert(key, `Key must not be nil.`)

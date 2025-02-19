@@ -76,16 +76,16 @@ function Movement:setupSprinting()
     
     RunService.RenderStepped:Connect(function(deltaTime: number)
         if not self.anima.character then return end
-         
         -- Smooth sprinting transition
-        local goal = self.isSprinting and SPRINTING_BOOST or 0
-        self.boosts.WalkSpeed.Sprinting = Lerp(self.boosts.WalkSpeed.Sprinting,goal,deltaTime*TRANSITION_SPEED)
+        local sprintGoal = self.isSprinting and SPRINTING_BOOST or 0
+        local sprintLerp = Lerp(self.boosts.WalkSpeed.Sprinting, sprintGoal, deltaTime * TRANSITION_SPEED)
+        self.boosts.WalkSpeed.Sprinting = math.clamp(sprintLerp,0,SPRINTING_BOOST)
+    
         -- Smooth crouching transition
-        goal = self.isCrouching and -CROUCHING_PENALTY or 0
-        self.boosts.WalkSpeed.Crouching = Lerp(self.boosts.WalkSpeed.Sprinting,goal,deltaTime*TRANSITION_SPEED)
-
-        self.currentSpeed = self.anima.root.AssemblyLinearVelocity.Magnitude
-    end)
+        local crouchGoal = self.isCrouching and -CROUCHING_PENALTY or 0
+        local crouchLerp = Lerp(self.boosts.WalkSpeed.Crouching, crouchGoal, deltaTime * TRANSITION_SPEED)
+        self.boosts.WalkSpeed.Crouching = math.clamp(crouchLerp,-CROUCHING_PENALTY,0)
+    end)    
 end
 
 function Movement:updateBoostCategory(category)
