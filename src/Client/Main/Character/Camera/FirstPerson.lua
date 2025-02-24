@@ -27,11 +27,17 @@ function FirstPerson:set()
     LocalPlayer.CameraMaxZoomDistance = 0.5
 end
 
-function FirstPerson:step()
-    -- local character = self.controller.clientAnima.character
-    -- self.camera.CameraSubject = character.Humanoid
-    -- character.PrimaryPart.CFrame *= self.angles
-    -- self.camera.CFrame = character.Head.CFrame * self.angles + HEAD_OFFSET
+function FirstPerson:step(deltaTime: number)
+    local character = self.controller.anima.character
+
+    local velocity = character.PrimaryPart.AssemblyLinearVelocity
+    local velocityMagnitude = velocity.magnitude
+    
+    local FOV = FIELD_OF_VIEW+velocityMagnitude
+
+    -- Lerp fov
+    local alpha = deltaTime
+    self.camera.FieldOfView = self.camera.FieldOfView*(1-deltaTime) + FOV*deltaTime
 end
 
 return FirstPerson

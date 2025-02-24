@@ -22,8 +22,6 @@ local Animator = require(script.Parent.Parent.Entities.Animator)
 
 function ClientBackpack.new()
     local self = setmetatable(BaseBackpack.new(Player), ClientBackpack)
-    self.tools = Player:WaitForChild("Backpack")
-    self.currentTool = nil :: Tool | nil
 
     -- Subclass Events
     self.events.ToolAdded = Signal.new()
@@ -51,25 +49,29 @@ function ClientBackpack:setup()
             local currentIndex = self.currentTool and self.currentTool:GetAttribute("Index") or 1
             index = currentIndex + 1
         end
+        
         if self.currentTool and index == self.currentTool:GetAttribute("Index") then
-            self:unequip()
+            self:unequipTool()
         else
-            self:equip(index)
+            if self.currentTool then
+                self:unequipTool()
+            end
+            self:equipTool(index)
         end
     end)
 end
 
-function ClientBackpack:attachHandle()
-    if not self.currentTool then warn("No current tool handle to attach") return end
+function ClientBackpack:attachHandle(dummyTool: Tool)
+    if not dummyTool then warn("No dummy tool provided") return end
 
-    local itemAsset = ItemUtility.GetItemAsset(self.currentTool.Name)
+    local itemAsset = ItemUtility.GetItemAsset(dummyTool.Name)
     local handleMotor6D = itemAsset:FindFirstChildOfClass("Motor6D")
 
     if handleMotor6D then
         handleMotor6D = handleMotor6D:Clone()
 
-        local currentToolHandle = self.currentTool.Model:FindFirstChild("Handle")
-        handleMotor6D.Parent = self.currentTool 
+        local currentToolHandle = dummyTool.Model:FindFirstChild("Handle")
+        handleMotor6D.Parent = dummyTool
         handleMotor6D.Part0 = Player.Character:FindFirstChild("Right Arm")
         handleMotor6D.Part1 = currentToolHandle
     else
@@ -77,22 +79,40 @@ function ClientBackpack:attachHandle()
     end
 end
 
-function ClientBackpack:equip(index: number)
+function ClientBackpack:equipTool(index: number)
+    if not Player.Character then error("Player has no character") return end
+
     local tool = self:getToolFromIndex(index)
     if tool then
+        -- Remove handle (if present)
+        local existingHandle = tool:FindFirstChild("Handle")
+        if existingHandle then existingHandle:Destroy() end
+        -- Tool equipped local event
         self.events.ToolEquipped:Fire(tool,tool:GetAttribute("Index"))
-        Player.Character.Humanoid:EquipTool(tool)
+        -- Send to server
+        BackpackMiddleware.SendToolEquip:Fire(tool:GetAttribute("Index"))
+        -- Dummy tool
+        local dummyTool = tool:Clone()
+        dummyTool.Parent = Player.Character
         self.currentTool = tool
-        self:attachHandle()
+        -- Attach handle
+        self:attachHandle(dummyTool)
+        -- Play hold animation
         local LocalAnimator = Animator.Get("Local")
         LocalAnimator:play("Base","Hold")
     end
 end
 
-function ClientBackpack:unequip()
+function ClientBackpack:unequipTool()
     self.events.ToolUnequipped:Fire(self.currentTool,self.currentTool:GetAttribute("Index"))
-    Player.Character.Humanoid:UnequipTools()
+    BackpackMiddleware.SendToolUnequip:Fire()
+    -- Remove dummy tool
+    local dummyTool = Player.Character:FindFirstChildOfClass("Tool")
+    if dummyTool then
+        dummyTool:Destroy()
+    end
     self.currentTool = nil
+    -- Stop hold animation
     local LocalAnimator = Animator.Get("Local")
     LocalAnimator:stop("Base","Hold")
 end

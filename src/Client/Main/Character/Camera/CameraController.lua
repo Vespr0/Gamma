@@ -48,10 +48,10 @@ function Camera:setup()
     self:setMode("ThirdPerson")
 
     -- Connect RenderStepped to update the camera behavior
-    self.trove:Connect(RunService.RenderStepped, function()
+    self.trove:Connect(RunService.RenderStepped, function(deltaTime: number)
         local modeHandler = self.modes[self.mode]
         if modeHandler and modeHandler.step then
-            modeHandler:step()
+            modeHandler:step(deltaTime)
         else
             warn("Invalid mode or missing step function.")
         end

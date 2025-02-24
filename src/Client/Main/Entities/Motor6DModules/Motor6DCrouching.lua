@@ -17,9 +17,9 @@ function Motor6DCrouching.Connect(utility, rig: TypeRig.Rig)
     local function animate(mode: boolean)
         if mode then
             -- Add biases
-            local rootC1Bias = { offset = Vector3.zAxis / 2, angles = CFrame.Angles(0, 0, 0) }
-            local rightC1Bias = { offset = -Vector3.yAxis / 2 - Vector3.xAxis / 4, angles = CFrame.Angles(0, 0, math.rad(30)) }
-            local leftC1Bias = { offset = -Vector3.yAxis / 2 + Vector3.xAxis / 4, angles = CFrame.Angles(0, 0, math.rad(-30)) }
+            local rootC1Bias = { offset = Vector3.zAxis / 1.5, angles = CFrame.Angles(0, 0, 0) }
+            local rightC1Bias = { offset = -Vector3.yAxis / 1.5 - Vector3.xAxis / 4, angles = CFrame.Angles(0, 0, math.rad(30)) }
+            local leftC1Bias = { offset = -Vector3.yAxis / 1.5 + Vector3.xAxis / 4, angles = CFrame.Angles(0, 0, math.rad(-30)) }
 
             utility:addBias("RootJoint", BIAS_NAME, "C1", rootC1Bias, SMOOTHNESS)
             utility:addBias("Right Hip", BIAS_NAME, "C1", rightC1Bias, SMOOTHNESS)

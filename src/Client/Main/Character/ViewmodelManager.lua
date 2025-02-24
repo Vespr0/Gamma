@@ -209,6 +209,10 @@ function ViewmodelManager:createNewRig()
         end
     end    
 
+    -- Make shoulders more far apart
+    rig.Torso["Right Shoulder"].C0 = CFrame.new(1.25, 0.5, 0) * CFrame.Angles(0, math.rad(90), 0)
+    rig.Torso["Left Shoulder"].C0 = CFrame.new(-1.25, 0.5, 0) * CFrame.Angles(0, math.rad(-90), 0)
+
     -- Scale the rig
     rig:ScaleTo(RIG_SCALE)
 

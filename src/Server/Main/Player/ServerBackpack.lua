@@ -41,6 +41,13 @@ function ServerBackpack:listen()
         self.events.ToolUnequipped:Fire(child)
     end)
 
+    -- Listen for tool equip requests from the client
+    BackpackMiddleware.ReadToolEquip:Connect(function(player: Player, index: number)
+        if player ~= self.player then return end
+        
+        self:equipTool(index)
+    end)
+
     local function debugItems()
         warn("Debugging Items")
         self:addTool(ItemUtility.GetToolFromName("Brick", true))
@@ -64,6 +71,20 @@ function ServerBackpack:setToolNetworkOwnership(tool: Tool, owner: Player | nil)
     end
 end
 
+--[[ 
+    On the server side equipping tools is just setting the current equipped tool and adding an attribute to the character
+    physically equipping the tool is handled by the client side.
+]]
+function ServerBackpack:equipTool(index: number)
+    local tool = self:getToolFromIndex(index)
+    if tool then
+        -- TODO: Tell all other clients the tool was equipped   
+        self.currentTool = tool
+        -- Set CurrentTool attribute
+        self.anima.entity.rig:SetAttribute("CurretTool", tool.Name)
+    end
+end
+
 function ServerBackpack:addTool(tool: Tool)
     -- Hotbar number index
     local currentIndex = #self:getTools()
@@ -75,7 +96,6 @@ function ServerBackpack:addTool(tool: Tool)
     
     -- Put the tool in the backpack
     tool.Parent = self.tools
-    warn(tool:GetFullName())
 
     ServerBackpack.ItemID += 1
     tool:SetAttribute("ID", ServerBackpack.ItemID)

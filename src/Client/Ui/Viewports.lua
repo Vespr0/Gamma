@@ -19,19 +19,19 @@ function Viewports.GetItemViewport(tool: Tool,existingViewport)
     viewport.LightDirection = Vector3.new(-0.4, -.8, 0)
     local camera = Instance.new("Camera")
     camera.Parent = viewport
-    camera.FieldOfView = 50
+    camera.FieldOfView = 40
     model.Parent = viewport
     viewport.CurrentCamera = camera
 
     -- Camera and model positioning
     local origin = Vector3.zero
     local bounds = model:GetExtentsSize()
-    local maxAxis = math.max(bounds.X, bounds.Z)
-    local distance = maxAxis+1
+    local maxAxis = math.max(bounds.X, bounds.Y, bounds.Z)
+    local distance = maxAxis*1.2+1
     local height = 1
 
     -- Position model
-    local modelAngles = CFrame.Angles(math.rad(20), math.rad(30), 0)
+    local modelAngles = CFrame.Angles(math.rad(10), math.rad(50), 0)
     local modelCFrame = CFrame.new(origin) * modelAngles
     model:PivotTo(modelCFrame)
     -- Position camera

@@ -26,6 +26,7 @@ function Backpack.InitUi(ui)
     
     -- Functions
     local function addSlot(tool: Tool,index)
+        warn(tool)
         local slot = Slot:Clone()
         slot.Parent = HotbarFrame
         slot.Name = "Slot"..index
@@ -56,7 +57,7 @@ function Backpack.InitUi(ui)
         local slot = getSlot(index)
         if slot then
             local inner = slot.Inner  
-            local goal = {Size = UDim2.fromScale(1, 1), Position = UDim2.fromScale(0.5, 0.5)}
+            local goal = {Position = UDim2.fromScale(0.5, 0.5)}
             local tween = TweenService:Create(inner, TweenInfo.new(0.3), goal)
             tween:Play()
         end
@@ -68,7 +69,7 @@ function Backpack.InitUi(ui)
         local slot = getSlot(index)
         if slot then
             local inner = slot.Inner
-            local goal = {Size = UDim2.new(1, 2, 1, 2), Position = UDim2.new(0.5, 0, 0.5, -5)}
+            local goal = {Position = UDim2.new(0.5, 0, 0.5, -5)}
             local tween = TweenService:Create(inner, TweenInfo.new(0.2), goal)
             tween:Play() 
         end

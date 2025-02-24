@@ -19,7 +19,15 @@ function BaseBackpack.new(player: Player)
     if self.player == nil then error("Player is missing") return end
     if not PlayerUtility.IsValidPlayerValue(player) then error(`Player is not a Player"`) return end
 
-    self.tools = self.player:WaitForChild("Backpack") :: Backpack
+    if IS_SERVER then
+        self.tools = Instance.new("Folder")
+        self.tools.Name = "Tools"
+        self.tools.Parent = self.player
+    else
+        self.tools = self.player:WaitForChild("Tools",3) :: Backpack
+    end
+
+    self.currentTool = nil :: Tool?
 
     self.events = {}
 

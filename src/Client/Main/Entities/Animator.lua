@@ -20,7 +20,7 @@ Animator.GlobalAdded = Signal.new()
 
 -- Constants for animation fading factors
 local FADING_IN_FACTOR = 1 / 3
-local FADING_OUT_FACTOR = 1 / 3
+local FADING_OUT_FACTOR = 1 / 4
 
 function Animator.Get(key)
 	assert(key, `Key must not be nil.`)
@@ -160,7 +160,7 @@ function Animator:handleRunning(speed)
 		if walk or run then
 			self.wasMoving = true
 			self.loaded.Base.Walk:AdjustSpeed(speed / 10)
-			self.loaded.Base.Run:AdjustSpeed(speed / 15)
+			self.loaded.Base.Run:AdjustSpeed(speed / 14)
 		else
 			self.wasMoving = false
 			self:stop("Base", "Walk", FADING_OUT_FACTOR)
