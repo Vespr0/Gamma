@@ -14,6 +14,7 @@ local Animator = require(script.Parent.Animator)
 local TypeRig = require(ReplicatedStorage.Types.TypeRig)
 local Motor6DManager = require(script.Parent.Motor6DManager)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
+local ClientBackpack = require(script.Parent.Parent.Player.ClientBackpack)
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 ClientEntity.Instances = {}
@@ -39,9 +40,22 @@ function ClientEntity.new(rig: TypeRig.Rig)
 	
 	self:setup()
 
-	print(`Created client entity instance for rig "{rig.Name}"`)
+	-- print(`Created client entity instance for rig "{rig.Name}"`)
 	
 	return self
+end
+
+function ClientEntity:setup()
+	self:setupAnimations()
+
+	self.Motor6DManager = Motor6DManager.new(self.rig)
+
+	self:setupBackpack()
+
+	self.events.Died:Connect(function()
+		self.Motor6DManager:destroy()
+		self:destroy()
+	end)
 end
 
 function ClientEntity:setupAnimations()
@@ -51,19 +65,11 @@ function ClientEntity:setupAnimations()
 		animateScript:Destroy()
 	end
 	-- Link an animator instance
-	print(self.isLocalPlayer)
 	self.animator = Animator.new(self.rig,self.isLocalPlayer)
 end
 
-function ClientEntity:setup()
-	self:setupAnimations()
-
-	self.Motor6DManager = Motor6DManager.new(self.rig)
-
-	self.events.Died:Connect(function()
-		self.Motor6DManager:destroy()
-		self:destroy()
-	end)
+function ClientEntity:setupBackpack()
+	ClientBackpack.new(self)
 end
 
 function ClientEntity:destroy()

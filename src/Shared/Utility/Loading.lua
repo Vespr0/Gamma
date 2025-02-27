@@ -24,7 +24,7 @@ function Loading.LoadModules(folder,blacklist)
 	for _,module in modules do
 		local _,err = pcall(function()
 			-- Require the module and look for the Init function.
-			print(`⌛ Loading "{module.Name}" module`)
+			-- print(`⌛ Loading "{module.Name}" module`)
 			local required = require(module)
 
 			-- Ignore modules that return other stuff, like a single function

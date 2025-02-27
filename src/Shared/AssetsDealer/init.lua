@@ -11,8 +11,13 @@ local RunService = game:GetService("RunService")
 
 local function validateAssets()
 	for category,assets in AssetsDealer.RawAssets do
-		local validator = script.Validators:FindFirstChild(category)
-		if validator then validator = require(validator) else continue end
+		local validator = script.Validators:FindFirstChild(category.."Validator")
+		if validator then 
+			validator = require(validator)
+		else 
+			warn(`No validator for "{category}" category`) 
+			continue 
+		end
 		
 		for _,asset in assets do
 			validator(asset)

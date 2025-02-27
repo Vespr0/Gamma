@@ -3,8 +3,11 @@ FirstPerson.__index = FirstPerson
 
 -- Services
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+-- Modules
+local Lerp = require(ReplicatedStorage.Utility.Lerp) 
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 -- Settings
@@ -36,8 +39,15 @@ function FirstPerson:step(deltaTime: number)
     local FOV = FIELD_OF_VIEW+velocityMagnitude
 
     -- Lerp fov
-    local alpha = deltaTime
-    self.camera.FieldOfView = self.camera.FieldOfView*(1-deltaTime) + FOV*deltaTime
+    local alpha = deltaTime/5
+    self.camera.FieldOfView = Lerp(self.camera.FieldOfView, FOV, alpha)
+
+    for _, d in pairs(character:GetDescendants()) do
+        if d:IsA("BasePart") then
+            d.CastShadow = false
+            d.LocalTransparencyModifier = 1
+        end
+    end
 end
 
 return FirstPerson

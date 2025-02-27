@@ -12,10 +12,10 @@ local AbilitiesMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManag
 -- Constants
 local IS_SERVER = RunService:IsServer()
 
-function BaseAbility.new(item,name: string,config)
+function BaseAbility.new(tool,name: string,config)
     local self = setmetatable({}, BaseAbility)
 
-	if not item then error("Item is missing") return end
+	if not tool then error("Item is missing") return end
 	if not name then error("Ability name is missing") return end
 	if not config then error("Ability configuration is missing") return end
 	
@@ -24,7 +24,7 @@ function BaseAbility.new(item,name: string,config)
 	self.config = config
 
     -- Variables 
-	self.item = item
+	self.tool = tool
 	
 	-- Cooldown
 	self.cooldownDuration = self.config.CooldownDuration
@@ -35,12 +35,14 @@ end
 
 function BaseAbility:readAction(func)
 	AbilitiesMiddleware.ReadAbilityAction:Connect(function(player: Player,abilityName: string,...)
-		if not self.item.owner then error(`Item has been used but has no owner.`) return end
+		local player = Players:GetPlayerByUserId(player.UserId)
+		local toolPlayer = Players:GetPlayerByUserId(self.tool:GetAttribute("Owner"))
+		if not toolPlayer then error(`Item has been used but has no owner.`) return end
 		
-		if not self.item.owner.player then return end
+		if not toolPlayer then return end
 		
 		-- Make sure the right player is requesting.
-		if player ~= self.item.owner.player then return end
+		if player ~= toolPlayer then return end
 		
 		if abilityName ~= self.name then return end
 		func(player,...)
@@ -52,7 +54,7 @@ function BaseAbility:sendAction(...)
 end
 
 function BaseAbility:isToolEquipped()
-	return self.item.equipped
+	return self.tool:GetAttribute("Equipped")
 end
 
 function BaseAbility:heat()

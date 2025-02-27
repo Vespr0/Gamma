@@ -23,6 +23,7 @@ Game.Gameplay = {
 	ChargeIncrement = 0.01
 }
 -- Rig
+Game.RespawnTime = 3
 Game.Limbs = {
 	RightArm = "Right Arm",
 	LeftArm = "Left Arm",
@@ -37,5 +38,6 @@ Game.Generation = {
 	PART_WIDTH = 10,
 	PART_HEIGHT = 2
 }
+
 
 return Game

@@ -26,7 +26,6 @@ function Backpack.InitUi(ui)
     
     -- Functions
     local function addSlot(tool: Tool,index)
-        warn(tool)
         local slot = Slot:Clone()
         slot.Parent = HotbarFrame
         slot.Name = "Slot"..index

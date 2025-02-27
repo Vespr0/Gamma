@@ -7,15 +7,15 @@ local Inputs = require(Players.LocalPlayer.PlayerScripts:WaitForChild("Main").In
 local ClientThrow = setmetatable({}, {__index = BaseAbility})
 ClientThrow.__index = ClientThrow
 
-function ClientThrow.new(item,name: string,config)
-	local self = setmetatable(BaseAbility.new(item,name,config) :: TypeAbility.BaseAbility, ClientThrow)
+function ClientThrow.new(tool,name: string,config)
+	local self = setmetatable(BaseAbility.new(tool,name,config) :: TypeAbility.BaseAbility, ClientThrow)
 	
 	self:setup()
 	
 	warn(self.config)
 
 	-- Events
-	item.events.Destroyed:Connect(function()
+	tool.Destroyed:Connect(function()
 		self:destroy()
 	end)
 	
@@ -27,15 +27,15 @@ function ClientThrow:setup()
 	local lastChargeBegan = 0
 	
 	Inputs.events.ProcessedInputBegan:Connect(function(input)
-		if not Inputs.IsValidKey(self.config.keybinds,input.KeyCode) then return end
 		if not self:isToolEquipped() then return end
+		if not Inputs.IsValidKey(self.config.keybinds,input.KeyCode) then return end
 		
 		lastChargeBegan = os.clock()
 	end)
 	
 	Inputs.events.ProcessedInputEnded:Connect(function(input)
-		if not Inputs.IsValidKey(self.config.keybinds,input.KeyCode) then return end
 		if not self:isToolEquipped() then return end
+		if not Inputs.IsValidKey(self.config.keybinds,input.KeyCode) then return end
 		
 		local chargeDuration = os.clock() - lastChargeBegan
 		self:sendAction(chargeDuration)

@@ -11,6 +11,8 @@ ServerEntity.__index = ServerEntity
 local Signal = require(ReplicatedStorage.Packages.signal)
 local Game = require(ReplicatedStorage.Utility.Game)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
+local ServerBackpack = require(script.Parent.Parent.Player.ServerBackpack)
+
 -- Variables
 ServerEntity.Instances = {}
 ServerEntity.GlobalAdded = Signal.new()
@@ -33,11 +35,15 @@ function ServerEntity:setup()
 	self.rig:SetAttribute("ID",self.id)
 	self.rig.Parent = Game.Folders.Entities
 	
+	self:setupHumanoid()
+
 	CollectionService:AddTag(self.rig,Game.Tags.Entity)	
 	
 	ServerEntity.Instances[self.id] = self
 	ServerEntity.GlobalAdded:Fire(self)
-	
+
+	self:setupBackpack()
+
 	self.events.Died:Connect(function()
 		self:destroy()
 	end)
@@ -45,6 +51,14 @@ end
 
 function ServerEntity.Get(id: number|string)
 	return ServerEntity.Instances[tostring(id)]
+end
+
+function ServerEntity:setupHumanoid()
+	self.humanoid.BreakJointsOnDeath = false
+end
+
+function ServerEntity:setupBackpack()
+	ServerBackpack.new(self)
 end
 
 function ServerEntity:destroy()

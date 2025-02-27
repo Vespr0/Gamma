@@ -1,4 +1,3 @@
---!strict
 local Animator = {}
 Animator.__index = Animator
 
@@ -61,6 +60,9 @@ function Animator.new(rig, isLocalPlayer)
 	self:connectEvents()
 	self:setupAnimations()
 	
+	-- Play idle by default
+	self:play("Base", "Idle")
+
 	self.isLocalPlayer = isLocalPlayer
 	self.key = isLocalPlayer and "Local" or self.id 
 	Animator.Instances[self.key] = self
@@ -76,7 +78,7 @@ function Animator:setupAnimations()
 	self:load("Base", "Run", "Movement/Generic/Run")
 	self:load("Base", "Jump", "Movement/Generic/Jump")
 	self:load("Base", "FreeFalling", "Movement/Generic/FreeFalling")
-	self:load("Base","Hold","Items/Generic/Hold")
+	self:load("Base","Hold","Tools/Generic/Hold")
 end
 
 function Animator:doesAnimationExist(folderName:string, actionName:string)

@@ -29,7 +29,9 @@ function BaseEntity.new(rig,id: number)
 	
 	-- Events
 	self.events = {
-		Died = Signal.new()
+		Died = Signal.new(),
+		ChildAdded = Signal.new(),
+		ChildRemoved = Signal.new()
 	}
 
 	self:setupBase()
@@ -39,6 +41,16 @@ end
 
 function BaseEntity:setupBase()
 	self:setupRig()
+	self:setupEvents()
+end
+
+function BaseEntity:setupEvents()
+	self.rig.ChildAdded:Connect(function(child)
+		self.events.ChildAdded:Fire(child)
+	end)
+	self.rig.ChildRemoved:Connect(function(child)
+		self.events.ChildRemoved:Fire(child)
+	end)
 end
 
 function BaseEntity:setupRig()

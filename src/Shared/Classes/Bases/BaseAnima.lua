@@ -30,8 +30,6 @@ function BaseAnima.new(player)
 		Removed = Signal.new(),
 		CharacterAdded = Signal.new(),
 		CharacterDied = Signal.new(),
-		CharacterChildAdded = Signal.new(),
-		CharacterChildRemoved = Signal.new(),
 		CharacterAttributeChanged = Signal.new()
 	}
 
@@ -121,15 +119,6 @@ function BaseAnima:setupCharacter(character: TypeRig.Rig)
 	
 	self.humanoid.Running:Connect(function(speed)
 		self.moving = speed > 0
-	end)
-	
-	-- CharacterChildAdded
-	self.humanoid.ChildAdded:Connect(function(child: Instance)
-		self.events.CharacterChildAdded:Fire(child)
-	end)
-	-- CharacterChildRemoved
-	self.humanoid.ChildRemoved:Connect(function(child: Instance)
-		self.events.CharacterChildRemoved:Fire(child)
 	end)
 
 	character.AttributeChanged:Connect(function(name: string)

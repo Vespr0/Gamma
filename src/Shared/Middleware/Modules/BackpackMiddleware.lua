@@ -7,7 +7,7 @@ local PlayerUtility = require(ReplicatedStorage.Utility.Player)
 
 local function validateIndex(index: number?)
     if not index then error("Index is missing") return end
-    if not typeof(index) == "number" then error("Index is not a number") return end
+    if typeof(index) ~= "number" then error("Index is not a number") return end
     if index < 1 then error("Index is less than 1") return end
     
     return true        
@@ -18,6 +18,7 @@ function Middleware.Init(util)
         -- Send Server
         Middleware.SendToolAdded = util.signal.new()
         Middleware.SendToolRemoved = util.signal.new()
+        Middleware.NewBackpack = util.signal.new()
         -- Read Server
         local ReadServer = util.remote.OnServerEvent
         Middleware.ReadToolEquip = util.signal.new()
@@ -52,7 +53,8 @@ function Middleware.Init(util)
         local ReadClient = util.remote.OnClientEvent
         Middleware.ReadToolAdded = util.signal.new()
         Middleware.ReadToolRemoved = util.signal.new()
-        
+        Middleware.NewBackpack = util.signal.new()
+
         ReadClient:Connect(function(type: "ToolAdded" | "ToolRemoved",index: number)
             --if not PlayerUtility.IsAlive(Players.LocalPlayer) then return end TODO
             
@@ -60,6 +62,12 @@ function Middleware.Init(util)
                 Middleware.ReadToolAdded:Fire(index)
             elseif type == "ToolRemoved" then
                 Middleware.ReadToolRemoved:Fire(index)
+            end
+        end)
+        
+        ReadClient:Connect(function(type: "NewBackpack",entityID: number)
+            if type == "NewBackpack" then
+                Middleware.NewBackpack:Fire(entityID)
             end
         end)
     end

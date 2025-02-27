@@ -9,6 +9,7 @@ ServerAnima.__index = ServerAnima
 local Signal = require(ReplicatedStorage.Packages.signal)
 local ServerEntity = require(script.Parent.Parent.Entities.ServerEntity)
 local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
+local Game = require(ReplicatedStorage.Utility.Game)
 -- Variables
 ServerAnima.Instances = {}
 -- Global Events
@@ -38,7 +39,7 @@ function ServerAnima:setupProperties()
 	self.player.DevEnableMouseLock = false
 end
 
-function ServerAnima:setupCharacterLoading()
+function ServerAnima:loadCharacter()
 	local rig = AssetsDealer.Get("Rigs","Human","Clone")
 	rig.Name = self.player.Name
 
@@ -55,7 +56,11 @@ function ServerAnima:setup()
 	-- Setup player-specific properties
 	self:setupProperties()
 	-- Setup character loading
-	self:setupCharacterLoading()
+	self:loadCharacter()
+	self.events.CharacterDied:Connect(function()
+		task.wait(Game.RespawnTime)
+		self:loadCharacter()
+	end)
 end
 
 function ServerAnima:destroy()
@@ -68,11 +73,6 @@ function ServerAnima:destroy()
 end
 
 function ServerAnima.Init()
-	-- Setup starter character
-	-- local rig = AssetsDealer.Get("Rigs","Human","Clone")
-	-- rig.Parent = game:GetService("StarterPlayer")
-	-- rig.Name = "StarterCharacter"
-	
 	-- Setup existing players
 	for _, player in Players:GetPlayers() do
 		ServerAnima.new(player)
@@ -81,7 +81,6 @@ function ServerAnima.Init()
 	Players.PlayerAdded:Connect(function(player)
 		ServerAnima.new(player)
 	end)
-
 	-- Listen for players leaving
 	Players.PlayerRemoving:Connect(function(player)
 		local instance = ServerAnima.Get(player.UserId)

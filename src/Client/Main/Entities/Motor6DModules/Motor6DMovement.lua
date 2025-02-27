@@ -13,7 +13,7 @@ local Lerp = require(ReplicatedStorage.Utility.Lerp)
 local BIAS_NAME = "Tilt"
 local SMOOTHNESS = 10
 local VELOCITY_THRESHOLD = 0.1
-local MAX_TILT = math.rad(90)
+local MAX_TILT = math.rad(15)
 local MAX_SPEED = 20
 
 local function calculateMoveDirection(velocity: Vector3): (Vector3, number)

@@ -156,21 +156,21 @@ end
 
 function ClientLiquids.Init()
     -- Process existing liquid parts
-    local parts = CollectionService:GetTagged("Liquid")
-    for _, part in pairs(parts) do
-        ClientLiquids.Connect(part)
-    end
+    -- local parts = CollectionService:GetTagged("Liquid")
+    -- for _, part in pairs(parts) do
+    --     ClientLiquids.Connect(part)
+    -- end
 
-    -- Listen for new parts
-    CollectionService:GetInstanceAddedSignal("Liquid"):Connect(function(part: BasePart)
-        ClientLiquids.Connect(part)
-    end)
+    -- -- Listen for new parts
+    -- CollectionService:GetInstanceAddedSignal("Liquid"):Connect(function(part: BasePart)
+    --     ClientLiquids.Connect(part)
+    -- end)
 
-    -- Simulation loop
-    while true do
-        ClientLiquids.Step()
-        RunService.RenderStepped:Wait()
-    end
+    -- -- Simulation loop
+    -- while true do
+    --     ClientLiquids.Step()
+    --     RunService.RenderStepped:Wait()
+    -- end
 end
 
 return ClientLiquids

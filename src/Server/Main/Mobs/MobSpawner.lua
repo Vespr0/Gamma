@@ -20,6 +20,8 @@ function MobSpawner.Spawn(rigDirectory: string, cframe: CFrame?, className: stri
 		ServerEntity.new(rig)
 		
 		rig:PivotTo(cframe or CFrame.new(0,50,0))
+	else
+		warn(`Rig directory "{rigDirectory}" does not exist. Failed to spawn mob.`)
 	end
 
 	return rig
