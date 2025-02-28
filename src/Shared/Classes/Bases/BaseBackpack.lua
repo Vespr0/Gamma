@@ -76,6 +76,7 @@ function BaseBackpack:getToolFromIndex(index: number)
 end
 
 function BaseBackpack:destroyBase()
+    self.tools:Destroy()
     for _, signal in pairs(self.events) do
         signal:Destroy()
     end

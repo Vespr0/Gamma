@@ -16,7 +16,7 @@ ServerBackpack.ItemID = 0
 
 function ServerBackpack.new(entity) 
     if not entity then error("No entity provided") return end
-    
+
     local self = setmetatable(BaseBackpack.new(entity), ServerBackpack) 
 
     self.entity = entity
@@ -51,6 +51,7 @@ function ServerBackpack:setup()
         local ServerAnima = require(script.Parent.ServerAnima)
         local anima = ServerAnima.Get(player.UserId)
         local entity = anima.entity
+        warn(entity,self.entity)
         if entity.id ~= self.entity.id then return end
         
         self:equipTool(index, player)
