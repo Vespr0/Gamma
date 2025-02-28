@@ -83,7 +83,7 @@ end
 
 function Footsteps:setup()
     -- Remove default footstep sound
-    self.anima.events.CharacterAdded:Connect(Footsteps.setupCharacter, self)
+    self.anima.events.EntityAdded:Connect(Footsteps.setupCharacter, self)
 	if self.anima.character then
         self:setupCharacter()
     end

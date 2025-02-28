@@ -1,5 +1,4 @@
---!strict
-local Loader = {}
+local ClientLoader = {}
 
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,7 +15,7 @@ local function setContext(value)
     context = value
 end
 
-local function setProgress(value)
+local function setProgress(value: number)
     print("⌛ "..context,(value*100).."%")
     progress = value
 end
@@ -39,6 +38,7 @@ local function loadModules()
 	-- Modules
     setContext("Loading modules")
     setProgress(0)
+
 	Loading.LoadAssetsDealer()
     Loading.LoadModules(script.Parent,{script})
     -- Load Ui
@@ -47,11 +47,11 @@ local function loadModules()
     print("Modules loaded")
 end
 	
-Loader.Init = function()
+ClientLoader.Init = function()
 	if Game.Assets then
 		preload()
 	end
     loadModules()
 end
 
-return Loader
+return ClientLoader

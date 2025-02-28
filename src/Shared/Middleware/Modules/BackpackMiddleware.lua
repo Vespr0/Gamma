@@ -18,54 +18,93 @@ function Middleware.Init(util)
         -- Send Server
         Middleware.SendToolAdded = util.signal.new()
         Middleware.SendToolRemoved = util.signal.new()
+        Middleware.SendToolEquip = util.signal.new()
+        Middleware.SendToolUnequip = util.signal.new()
         Middleware.NewBackpack = util.signal.new()
+
+        Middleware.SendToolAdded:Connect(function(entityID: number,index: number)
+            validateIndex(index)
+            
+            util.remote:FireAllClients(entityID,"ToolAdded",index)
+        end)
+        
+        Middleware.SendToolRemoved:Connect(function(entityID: number,index: number)
+            validateIndex(index)
+
+            util.remote:FireAllClients(entityID,"ToolRemoved",index)
+        end)
+        
+        Middleware.SendToolEquip:Connect(function(entityID: number,index: number, blacklistedUserId: number)
+            validateIndex(index)
+
+            for _, player in Players:GetPlayers() do
+                if player.UserId == blacklistedUserId then continue end
+                util.remote:FireClient(player,entityID,"ToolEquip",index)
+            end
+        end)
+        
+        Middleware.SendToolUnequip:Connect(function(entityID: number, blacklistedUserId: number)
+            for _, player in Players:GetPlayers() do
+                if player.UserId == blacklistedUserId then continue end
+                util.remote:FireClient(player,entityID,"ToolUnequip")
+            end
+        end)
+        
+        Middleware.NewBackpack:Connect(function(entityID: number)
+            util.remote:FireClient(entityID,"NewBackpack")
+        end)
+        
         -- Read Server
         local ReadServer = util.remote.OnServerEvent
         Middleware.ReadToolEquip = util.signal.new()
         Middleware.ReadToolUnequip = util.signal.new()
 
         ReadServer:Connect(function(player, type: "ToolEquip" | "ToolUnequip",index: number)
-            validateIndex(index)
-
             if type == "ToolEquip" then
+                validateIndex(index)
                 Middleware.ReadToolEquip:Fire(player,index)
             elseif type == "ToolUnequip" then
-                Middleware.ReadToolUnequip:Fire(player,index)
+                Middleware.ReadToolUnequip:Fire(player)
             end 
         end)
     else
         -- Send Client
-        local SendClient = util.remote.OnClientEvent
         Middleware.SendToolEquip = util.signal.new()
         Middleware.SendToolUnequip = util.signal.new()
 
-        SendClient:Connect(function(type: "ToolEquip" | "ToolUnequip",index: number)
+        Middleware.SendToolEquip:Connect(function(index: number)
             validateIndex(index)
 
-            if type == "ToolEquip" then
-                util.remote:FireServer("ToolEquip",index)
-            elseif type == "ToolUnequip" then
-                util.remote:FireServer("ToolUnequip",index)
-            end
+            util.remote:FireServer("ToolEquip",index)
         end)
-        
+
+        Middleware.SendToolUnequip:Connect(function()
+            util.remote:FireServer("ToolUnequip")
+        end)
+
         -- Read Client
         local ReadClient = util.remote.OnClientEvent
         Middleware.ReadToolAdded = util.signal.new()
         Middleware.ReadToolRemoved = util.signal.new()
         Middleware.NewBackpack = util.signal.new()
+        Middleware.ReadToolEquip = util.signal.new()
+        Middleware.ReadToolUnequip = util.signal.new()
 
-        ReadClient:Connect(function(type: "ToolAdded" | "ToolRemoved",index: number)
-            --if not PlayerUtility.IsAlive(Players.LocalPlayer) then return end TODO
+        ReadClient:Connect(function(entityID: number,type: "ToolAdded" | "ToolRemoved" | "ToolEquip" | "ToolUnequip",index: number)
+            --if not PlayerUtility.IsAlive(Players.LocalPlayer) then return end -- TODO: figure out if it's necessary or not
             
             if type == "ToolAdded" then
-                Middleware.ReadToolAdded:Fire(index)
+                Middleware.ReadToolAdded:Fire(entityID, index)
             elseif type == "ToolRemoved" then
-                Middleware.ReadToolRemoved:Fire(index)
+                Middleware.ReadToolRemoved:Fire(entityID, index)
+            elseif type == "ToolEquip" then
+                Middleware.ReadToolEquip:Fire(entityID, index)
+            elseif type == "ToolUnequip" then
+                Middleware.ReadToolUnequip:Fire(entityID)
             end
         end)
         
-        ReadClient:Connect(function(type: "NewBackpack",entityID: number)
+        ReadClient:Connect(function(entityID: number, type: "NewBackpack")
             if type == "NewBackpack" then
                 Middleware.NewBackpack:Fire(entityID)
             end

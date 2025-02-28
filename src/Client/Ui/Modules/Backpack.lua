@@ -81,14 +81,17 @@ function Backpack.InitUi(ui)
         lastFocusedIndex = index
     end
 	
-	for _,tool in ui.backpack.tools:GetChildren() do
-		addSlot(tool,tool:GetAttribute("Index"))
-	end	
+    -- If the backpack already loaded add the tools
+	if ui.backpack then
+        for _,tool in ui.backpack.tools:GetChildren() do
+            addSlot(tool,tool:GetAttribute("Index"))
+        end	
+    end
 	
-	trove:Add(ui.backpack.events.ToolAdded:Connect(addSlot))
-	trove:Add(ui.backpack.events.ToolRemoved:Connect(removeSlot))
-	trove:Add(ui.backpack.events.ToolEquipped:Connect(focusSlot))
-	trove:Add(ui.backpack.events.ToolUnequipped:Connect(unfocusSlot))
+	trove:Add(ui.events.ToolAdded:Connect(addSlot))
+	trove:Add(ui.events.ToolRemoved:Connect(removeSlot))
+	trove:Add(ui.events.ToolEquip:Connect(focusSlot))
+	trove:Add(ui.events.ToolUnequip:Connect(unfocusSlot))
 	
 	return trove
 end

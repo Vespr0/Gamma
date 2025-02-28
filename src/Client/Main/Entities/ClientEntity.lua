@@ -40,7 +40,7 @@ function ClientEntity.new(rig: TypeRig.Rig)
 	
 	self:setup()
 
-	-- print(`Created client entity instance for rig "{rig.Name}"`)
+	print(`Created client entity instance for rig "{rig.Name}"`)
 	
 	return self
 end

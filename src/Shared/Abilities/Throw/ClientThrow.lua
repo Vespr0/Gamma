@@ -27,14 +27,14 @@ function ClientThrow:setup()
 	local lastChargeBegan = 0
 	
 	Inputs.events.ProcessedInputBegan:Connect(function(input)
-		if not self:isToolEquipped() then return end
+		if not self:isToolEquip() then return end
 		if not Inputs.IsValidKey(self.config.keybinds,input.KeyCode) then return end
 		
 		lastChargeBegan = os.clock()
 	end)
 	
 	Inputs.events.ProcessedInputEnded:Connect(function(input)
-		if not self:isToolEquipped() then return end
+		if not self:isToolEquip() then return end
 		if not Inputs.IsValidKey(self.config.keybinds,input.KeyCode) then return end
 		
 		local chargeDuration = os.clock() - lastChargeBegan

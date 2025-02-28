@@ -20,7 +20,7 @@ export type BaseAnima = {
         Removed: Signal<nil>,
         Added: Signal<BaseAnima>,
         CharacterAdded: Signal<TypeRig.Rig>,
-        CharacterDied: Signal<nil>
+        EntityDied: Signal<nil>
     }
 }
 

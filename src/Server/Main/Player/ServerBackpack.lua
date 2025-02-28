@@ -14,16 +14,17 @@ local ToolUtility = require(ReplicatedStorage.Utility.ToolUtility)
 
 ServerBackpack.ItemID = 0
 
-function ServerBackpack.new(entity) --No longer takes a player arg, must take an entity.
-    local self = setmetatable(BaseBackpack.new(entity), ServerBackpack) --Send the entity to the base class
+function ServerBackpack.new(entity) 
+    local self = setmetatable(BaseBackpack.new(entity), ServerBackpack) 
 
     self.entity = entity
+    self.player = Players:GetPlayerFromCharacter(entity.rig) or nil :: Player?
         
     self:setup()
 
     -- Subclass Events
-    self.events.ToolEquipped = Signal.new()
-    self.events.ToolUnequipped = Signal.new()
+    self.events.ToolEquip = Signal.new()
+    self.events.ToolUnequip = Signal.new()
     
     ServerBackpack.Instances[entity.id] = self
 
@@ -34,13 +35,13 @@ function ServerBackpack:setup()
     self.entity.events.ChildAdded:Connect(function(child)
         if not child:IsA("Tool") then return end
 
-        self.events.ToolEquipped:Fire(child)
+        self.events.ToolEquip:Fire(child)
     end)
 
     self.entity.events.ChildRemoved:Connect(function(child)
         if not child:IsA("Tool") then return end
 
-        self.events.ToolUnequipped:Fire(child)
+        self.events.ToolUnequip:Fire(child)
     end)
 
     -- Listen for tool equip requests from the client
@@ -50,7 +51,17 @@ function ServerBackpack:setup()
         local entity = anima.entity
         if entity.id ~= self.entity.id then return end
         
-        self:equipTool(index)
+        self:equipTool(index, player)
+    end)
+
+    -- Listen for tool unequip requests from the client
+    BackpackMiddleware.ReadToolUnequip:Connect(function(player: Player)
+        local ServerAnima = require(script.Parent.ServerAnima)
+        local anima = ServerAnima.Get(player.UserId)
+        local entity = anima.entity
+        if entity.id ~= self.entity.id then return end
+        
+        self:unequipTool(player)
     end)
 
     local function debugItems()
@@ -83,14 +94,35 @@ end
     On the server side equipping tools is just setting the current equipped tool and adding an attribute to the character
     physically equipping the tool is handled by the client side.
 ]]
-function ServerBackpack:equipTool(index: number)
+function ServerBackpack:equipTool(index: number, player: Player | nil)
     local tool = self:getToolFromIndex(index)
     if tool then
         -- TODO: Tell all other clients the tool was equipped   
         self.equippedTool = tool
         -- Set EquippedTool attribute
-        self.anima.entity.rig:SetAttribute("EquippedTool", tool.Name)
+        self.entity.rig:SetAttribute("EquippedTool", tool.Name)
+
+        -- Tell all other clients
+        local blacklistedUserId = player and player.UserId or nil
+        BackpackMiddleware.SendToolEquip:Fire(self.entity.id,index,blacklistedUserId)
+
         tool:SetAttribute("Equipped", true)
+    end
+end
+
+function ServerBackpack:unequipTool(player: Player | nil)
+    local tool = self.equippedTool
+    if tool then
+        -- TODO: Tell all other clients the tool was unequipped
+        self.equippedTool = nil
+        -- Set EquippedTool attribute
+        self.entity.rig:SetAttribute("EquippedTool", nil)
+
+        -- Tell all other clients
+        local blacklistedUserId = player and player.UserId or nil
+        BackpackMiddleware.SendToolUnequip:Fire(self.entity.id,blacklistedUserId)
+        
+        tool:SetAttribute("Equipped", false)
     end
 end
 
@@ -105,6 +137,7 @@ function ServerBackpack:addTool(tool: Tool)
     
     -- Put the tool in the backpack
     tool.Parent = self.tools
+    warn(tool:GetFullName())
 
     ServerBackpack.ItemID += 1
     tool:SetAttribute("ID", ServerBackpack.ItemID)
@@ -116,13 +149,13 @@ function ServerBackpack:removeTool(param: Tool | number)
         local index = param
         local tool = self:getToolFromIndex(index)
         if tool then
-            BackpackMiddleware.SendToolRemoved:Fire(index)
+            BackpackMiddleware.SendToolRemoved:Fire(self.entity.id,index)
             tool:Destroy()
         end
     else
         -- Tool
         local index = param:GetAttribute("Index")
-        BackpackMiddleware.SendToolRemoved:Fire(index)
+        BackpackMiddleware.SendToolRemoved:Fire(self.entity.id,index)
         param:Destroy()
     end
 end
@@ -136,7 +169,7 @@ end
 function ServerBackpack:dropTool(index: number)
     local tool = self:getToolFromIndex(index)
     if tool then
-        BackpackMiddleware.SendToolRemoved:Fire(index)
+        BackpackMiddleware.SendToolRemoved:Fire(self.entity.id,index)
         tool.Parent = workspace
         self:setToolNetworkOwnership(tool, nil)
     end
@@ -148,15 +181,10 @@ function ServerBackpack:destroy()
 end
 
 function ServerBackpack.Init()
-    Players.PlayerAdded:Connect(function(player: Player)
-        local entity = require(script.Parent.ServerAnima).new(player).entity
-        ServerBackpack.new(entity) -- Pass the entity
+    local ServerEntity = require(script.Parent.Parent.Entities.ServerEntity)
+    ServerEntity.GlobalAdded:Connect(function(entity)
+        ServerBackpack.new(entity)
     end)
-
-    for _, player in pairs(Players:GetPlayers()) do
-        local entity = require(script.Parent.ServerAnima).new(player).entity
-        ServerBackpack.new(entity) -- Pass the entity
-    end
 end
 
 return ServerBackpack

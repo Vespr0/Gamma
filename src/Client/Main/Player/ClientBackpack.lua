@@ -63,9 +63,12 @@ function ClientBackpack:setup()
             end
         end)
     end
+
+    ClientBackpack.GlobalAdded:Fire(self)
+    ClientBackpack.Instances[self.entity.id] = self
 end
 
-function ClientBackpack:attachHandle(dummyTool: Tool)
+function ClientBackpack:attachHandle(dummyTool)
     if not dummyTool then warn("No dummy tool provided") return end
 
     local itemAsset = ToolUtility.GetAsset(dummyTool.Name)
@@ -92,7 +95,7 @@ function ClientBackpack:equipTool(index: number)
         local existingHandle = tool:FindFirstChild("Handle")
         if existingHandle then existingHandle:Destroy() end
         -- Tool equipped local event
-        self.events.ToolEquipped:Fire(tool,tool:GetAttribute("Index"))
+        self.events.ToolEquip:Fire(tool,tool:GetAttribute("Index"))
         -- Send to server
         BackpackMiddleware.SendToolEquip:Fire(tool:GetAttribute("Index"))
         -- Dummy tool
@@ -109,7 +112,7 @@ function ClientBackpack:equipTool(index: number)
 end
 
 function ClientBackpack:unequipTool()
-    self.events.ToolUnequipped:Fire(self.equippedTool,self.equippedTool:GetAttribute("Index"))
+    self.events.ToolUnequip:Fire(self.equippedTool,self.equippedTool:GetAttribute("Index"))
     BackpackMiddleware.SendToolUnequip:Fire()
     -- Remove dummy tool
     local dummyTool = Player.Character:FindFirstChildOfClass("Tool")

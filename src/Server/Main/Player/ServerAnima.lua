@@ -24,6 +24,9 @@ end
 function ServerAnima.new(player: Player)
 	local self = setmetatable(BaseAnima.new(player), ServerAnima)
 
+	-- Check if player already has a server anima instance
+	if (ServerAnima.Instances[self.userId]) then error("Player already has a server anima instance") end
+
 	self.userId = player.UserId :: number
 	self.entity = nil
 
@@ -40,8 +43,16 @@ function ServerAnima:setupProperties()
 end
 
 function ServerAnima:loadCharacter()
+	print("a")
 	local rig = AssetsDealer.Get("Rigs","Human","Clone")
 	rig.Name = self.player.Name
+	-- Move the rig to a temporary folder
+	rig.Parent = game:GetService("ServerStorage"):WaitForChild("Temp")
+	print(rig:FindFirstChild("Humanoid"))
+	print(rig:FindFirstChild("Humanoid").Health)
+	print(rig:FindFirstChild("Humanoid").MaxHealth)
+	print("b")
+	-- rig.Humanoid.Health = rig.Humanoid.MaxHealth -- TODO: I have to do this, i have no fucking clue why
 
 	self.entity = ServerEntity.new(rig)
 
@@ -57,7 +68,7 @@ function ServerAnima:setup()
 	self:setupProperties()
 	-- Setup character loading
 	self:loadCharacter()
-	self.events.CharacterDied:Connect(function()
+	self.events.EntityDied:Connect(function()
 		task.wait(Game.RespawnTime)
 		self:loadCharacter()
 	end)

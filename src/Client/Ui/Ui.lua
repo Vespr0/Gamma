@@ -1,6 +1,8 @@
 --!strict
 local Ui = {}
 
+Ui.Dependencies = { "ClientAnima" }
+
 -- Services
 local Players = game:GetService("Players")
 local StarterGUI = game:GetService("StarterGui")
@@ -10,11 +12,11 @@ local RunService = game:GetService("RunService")
 local ClientAnima = require(script.Parent.Parent.Main.Player.ClientAnima)
 local ClientBackpack = require(script.Parent.Parent.Main.Player.ClientBackpack)
 local Fusion = require(ReplicatedStorage.Packages.fusion)
+local Signal = require(ReplicatedStorage.Packages.signal)
+local Trove = require(ReplicatedStorage.Packages.trove)
 -- Variables
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
-
-Ui.Dependencies = { "ClientAnima", "ClientBackpack" }
 
 local function disableCoreUi()
     repeat
@@ -94,14 +96,6 @@ function Ui.GetUtility(characterDependant: boolean)
     utility.Computed = Fusion.Computed
 	utility.Hydrate = Fusion.Hydrate
 	utility.Spring = Fusion.Spring
-	
-	if characterDependant then
-		if not ClientBackpack.LocalPlayerInstance then
-			error("Client Backpack LocalPlayerInstance is nil, maybe it wasn't initialized yet?")
-		end
-		local backpack = ClientBackpack.LocalPlayerInstance
-		utility.backpack = backpack
-	end
 
     utility.GetGui = function(name)
         return utility.playerGui:WaitForChild(name)
@@ -113,9 +107,46 @@ function Ui.GetUtility(characterDependant: boolean)
         return clone
 	end
 	
-	-- Update the player backpack TODO: Is this a memory leak?
-	ClientBackpack.GlobalAdded:Connect(function()
-		utility.backpack = ClientBackpack.LocalPlayerInstance
+	utility.events = {
+		ToolAdded = Signal.new(),
+		ToolRemoved = Signal.new(),
+		ToolEquip = Signal.new(),
+		ToolUnequip = Signal.new(),
+	}
+
+	-- Update the character backpack
+	local trove
+	local function updateBackpack(backpack)
+		if trove then trove:Destroy() end
+		trove = Trove.new()
+
+		utility.backpack = backpack
+
+		trove:Add(backpack.events.ToolAdded:Connect(function(tool: Tool, index: number)
+			utility.events.ToolAdded:Fire(tool,index)
+		end))
+
+		trove:Add(backpack.events.ToolRemoved:Connect(function(tool: Tool, index: number)
+			utility.events.ToolRemoved:Fire(tool,index)
+		end))
+
+		trove:Add(backpack.events.ToolEquip:Connect(function(tool: Tool, index: number)
+			utility.events.ToolEquip:Fire(tool,index)
+		end))
+
+		trove:Add(backpack.events.ToolUnequip:Connect(function(tool: Tool, index: number)
+			utility.events.ToolUnequip:Fire(tool,index)
+		end))
+	end
+
+	if ClientBackpack.LocalPlayerInstance then
+		updateBackpack(ClientBackpack.LocalPlayerInstance)
+	end
+	
+	ClientBackpack.GlobalAdded:Connect(function(backpack)
+		if not backpack.isLocalPlayerInstance then return end
+
+		updateBackpack(backpack)
 	end)
 
     return utility

@@ -53,7 +53,7 @@ function BaseAbility:sendAction(...)
 	return AbilitiesMiddleware.SendAbilityAction(self.name,...)
 end
 
-function BaseAbility:isToolEquipped()
+function BaseAbility:isToolEquip()
 	return self.tool:GetAttribute("Equipped")
 end
 

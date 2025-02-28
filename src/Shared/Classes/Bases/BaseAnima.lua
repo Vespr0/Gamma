@@ -28,9 +28,9 @@ function BaseAnima.new(player)
 	self.events = {
 		Added = Signal.new(),
 		Removed = Signal.new(),
-		CharacterAdded = Signal.new(),
-		CharacterDied = Signal.new(),
-		CharacterAttributeChanged = Signal.new()
+		EntityAdded = Signal.new(),
+		EntityDied = Signal.new(),
+		EntityAttributeChanged = Signal.new()
 	}
 
 	self:setupBase()
@@ -72,16 +72,15 @@ function BaseAnima:setupBase()
 	-- Fire the Added event
 	self.events.Added:Fire(self)
 
-	-- Handle character setup when a new character is added
-	self.player.CharacterAdded:Connect(function(character: Model)
-		self:setupCharacter(character :: TypeRig.Rig)
-	end)
-
 	-- If the character already exists (player joined before this script ran), set it up
 	local character = self.player.Character :: TypeRig.Rig
 	if character then
 		self:setupCharacter(character)
 	end
+	-- Handle character setup when a new character is added
+	self.player.CharacterAdded:Connect(function(character: Model)
+		self:setupCharacter(character :: TypeRig.Rig)
+	end)
 
 	-- Handle player removal
 	Players.PlayerRemoving:Connect(function(player: Player)
@@ -106,15 +105,13 @@ function BaseAnima:setupCharacter(character: TypeRig.Rig)
 	self.root = character.PrimaryPart :: BasePart
 	self.height = character:GetExtentsSize().Y :: number
 
-	self.humanoid.WalkSpeed = 10
-
 	-- Died
 	self.humanoid.Died:Connect(function()
-		self.events.CharacterDied:Fire()
+		self.events.EntityDied:Fire()
 	end)
 	-- The rig could also be destroyed
 	character.Destroying:Connect(function()
-		self.events.CharacterDied:Fire()
+		self.events.EntityDied:Fire()
 	end)
 	
 	self.humanoid.Running:Connect(function(speed)
@@ -123,11 +120,11 @@ function BaseAnima:setupCharacter(character: TypeRig.Rig)
 
 	character.AttributeChanged:Connect(function(name: string)
 		local value = self.character:GetAttribute(name) -- AttributeChanged doesn't return the value
-		self.events.CharacterAttributeChanged:Fire(name, value)
+		self.events.EntityAttributeChanged:Fire(name, value)
 	end)
 
 	self.character = character
-	self.events.CharacterAdded:Fire(character)
+	self.events.EntityAdded:Fire(character)
 end
 
 function BaseAnima:destroyBase()

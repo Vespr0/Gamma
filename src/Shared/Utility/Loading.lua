@@ -21,7 +21,25 @@ function Loading.LoadModules(folder,blacklist)
 		table.insert(modules,d)
 	end
 
+	local loaded = false
+	local currentModule = nil
+	-- Global timeout system
+    local globalTimeout = 0
+    task.spawn(function()
+		repeat 
+			task.wait(1) 
+			globalTimeout += 1 
+		until globalTimeout > 5 or loaded
+
+		if not loaded then
+			error("❌ Loading timed out at "..currentModule.Name)
+		end
+    end)
+
+	local timeoutScores = {}
+
 	for _,module in modules do
+		currentModule = module
 		local _,err = pcall(function()
 			-- Require the module and look for the Init function.
 			-- print(`⌛ Loading "{module.Name}" module`)
@@ -36,6 +54,18 @@ function Loading.LoadModules(folder,blacklist)
 					if not Loading.Initialized[d] then
 						-- TODO: if the module in the dependencies doesnt exist this will lead to an endless loop
 						print(`{module.Name} depends on {d}, putting it at the bottom of the queue`)
+
+						-- Add timeout to prevent infinite loops
+						if timeoutScores[module.Name] then
+							timeoutScores[module.Name] += 1
+						else
+							timeoutScores[module.Name] = 1
+						end
+
+						if timeoutScores[module.Name] > 10 then
+							error(`❌ Module "{module.Name}" depends on a module that will never initialize`)
+						end
+
 						task.wait(0.1)
 						table.insert(modules,module)
 						return
@@ -59,6 +89,8 @@ function Loading.LoadModules(folder,blacklist)
 			error(`❌ Module "{module.Name}" could not be loaded: {err}`)
 		end
 	end
+
+	loaded = true
 end
 
 return Loading

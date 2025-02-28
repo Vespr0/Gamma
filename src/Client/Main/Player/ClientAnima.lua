@@ -33,12 +33,12 @@ end
 function ClientAnima:setup()
 	self.camera = Camera.new(self)
 	
-	self.events.CharacterAdded:Connect(function()
-		self.entity = ClientEntity.LocalPlayerInstance
-	end)
 	if self.character then
 		self.entity = ClientEntity.LocalPlayerInstance
 	end
+	self.events.EntityAdded:Connect(function()
+		self.entity = ClientEntity.LocalPlayerInstance
+	end)
 end
 
 function ClientAnima:destroy()

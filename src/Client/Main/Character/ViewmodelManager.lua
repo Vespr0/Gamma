@@ -1,6 +1,9 @@
 local ViewmodelManager = {}
 ViewmodelManager.__index = ViewmodelManager
 
+-- Dependencies
+ViewmodelManager.Dependencies = { "ClientAnima" }
+
 -- Services
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,6 +17,8 @@ local Trove = require(ReplicatedStorage.Packages.trove)
 local Game = require(ReplicatedStorage.Utility.Game)
 local Signal = require(ReplicatedStorage.Packages.signal)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
+local ClientAnima = require(script.Parent.Parent.Player.ClientAnima):get()
+local ClientEntity = require(script.Parent.Parent.Entities.ClientEntity)
 
 -- Constants
 local VISIBLE_LIMBS = { Game.Limbs.RightArm, Game.Limbs.LeftArm }
@@ -23,8 +28,6 @@ local VIEWMODEL_SCALE = 0.5
 
 -- Singleton
 local singleton = nil
-
-ViewmodelManager.Dependencies = { "ClientAnima", "ClientBackpack" }
 
 -- Helper functions
 local function scaleCFrame(cframe: CFrame, scale: number)
@@ -40,16 +43,30 @@ local function destroyFakeTool(fakeTool)
 end
 
 function ViewmodelManager.new()
+    if singleton then
+        singleton:destroy()
+        singleton = nil
+    end
+
     local self = setmetatable({}, ViewmodelManager)
     
-    self.anima = require(script.Parent.Parent.Player.ClientAnima):get()
+    self.anima = ClientAnima.get()
+
+    self.entity = ClientEntity.LocalPlayerInstance
+    if not self.entity then error("Attempt to create viewmodel manager instance without entity") return end
+
     self.backpack = require(script.Parent.Parent.Player.ClientBackpack).LocalPlayerInstance
+    if not self.backpack then error("Attempt to create viewmodel manager instance without backpacks") return end
+
     self.visible = true
     self.fakeTools = {}
     self.rig = nil
     self.events = { NewRig = Signal.new() }
 
-    self:initializeDependencies()
+    self:setup()
+
+    singleton = self
+
     return self
 end
 
@@ -57,25 +74,15 @@ function ViewmodelManager:toggleFakeToolVisibility(fakeTool,visible: boolean)
     fakeTool.model.Parent = visible and self.rig or nil
 end
 
-function ViewmodelManager:initializeDependencies()
-    self:setupCharacterEvents()
+function ViewmodelManager:setup()
+    self:createNewRig()
     self:setupToolEvents()
-end
-
-function ViewmodelManager:setupCharacterEvents()
-    if self.anima.character then
-        self:createNewRig()
-    end
-    self.anima.events.CharacterAdded:Connect(function()
-        self:createNewRig()
-    end)
 end
 
 function ViewmodelManager:setupToolEvents()
     for _, tool in self.backpack:getTools() do
         self:createFakeTool(tool)
     end
-    
     self.backpack.events.ToolAdded:Connect(function(tool)
         self:createFakeTool(tool)
     end)
@@ -87,7 +94,7 @@ function ViewmodelManager:setupToolEvents()
         end
     end)
 
-    self.backpack.events.ToolEquipped:Connect(function(tool)
+    self.backpack.events.ToolEquip:Connect(function(tool)
         local ID = tool:GetAttribute("ID")
         for otherID, fakeTool in self.fakeTools do
             if otherID == ID then
@@ -98,7 +105,7 @@ function ViewmodelManager:setupToolEvents()
         end
     end)
 
-    self.backpack.events.ToolUnequipped:Connect(function(tool)
+    self.backpack.events.ToolUnequip:Connect(function(tool)
         local ID = tool:GetAttribute("ID")
         self.fakeTools[ID]:hide()
     end)
@@ -165,7 +172,7 @@ end
 
 function ViewmodelManager:setupRigSync()
     local trove = Trove.new()
-    self.anima.events.CharacterDied:Connect(function()
+    self.anima.events.EntityDied:Connect(function()
         trove:Destroy()
     end)
     trove:Connect(RunService.RenderStepped, function(deltaTime)
@@ -272,16 +279,24 @@ function ViewmodelManager:cloneMotor(originalMotor, part0, part1)
     return clonedMotor
 end
 
--- Singleton pattern
-function ViewmodelManager:get()
-    if not singleton then
-        singleton = ViewmodelManager.new()
+function ViewmodelManager:destroy()
+    for _, fakeTool in self.fakeTools do
+        destroyFakeTool(fakeTool)
     end
-    return singleton
+    self.rig:Destroy()
+    for _,event in self.events do
+        event:Destroy()
+    end
+    singleton = nil
 end
 
 function ViewmodelManager.Init()
-    ViewmodelManager:get()
+    if ClientEntity.LocalPlayerInstance then
+        ViewmodelManager.new()
+    end
+    ClientAnima.events.EntityAdded:Connect(function()
+        ViewmodelManager.new()
+    end)
 end
 
 return ViewmodelManager

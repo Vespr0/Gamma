@@ -19,7 +19,7 @@ ServerEntity.GlobalAdded = Signal.new()
 ServerEntity.Counter = 0
 
 function ServerEntity.new(rig)
-	if not EntityUtility.IsHealthy(rig) then warn(`Rig "{rig.Name}" is not alive, cannot create server entity instance`) return end
+	if not EntityUtility.IsHealthy(rig) then warn(`Rig "{rig.Name}" is not healthy, cannot create server entity instance`) return end
 
 	ServerEntity.Counter += 1
 	local id = ServerEntity.Counter

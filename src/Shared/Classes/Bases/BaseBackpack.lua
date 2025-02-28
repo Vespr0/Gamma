@@ -24,11 +24,11 @@ function BaseBackpack.new(entity: TypeEntity.BaseEntity)
     if IS_SERVER then
         warn("uhm what the sigma")
         self.tools = Instance.new("Folder")
-        self.tools.Name = "Tools"
-        self.tools.Parent = self.entity.rig -- Place under the entity's rig
+        self.tools.Name = tostring(entity.id)
+        self.tools.Parent = ReplicatedStorage.ToolsDeposit -- Place under the entity's rig
     else
         --Look for it under the player instance instead of the rig.
-        self.tools = self.entity.rig:WaitForChild("Tools",3) :: Backpack
+        self.tools = ReplicatedStorage.ToolsDeposit:WaitForChild(tostring(entity.id),3) :: Backpack
     end
 
     self.equippedTool = nil :: Tool?
@@ -36,8 +36,8 @@ function BaseBackpack.new(entity: TypeEntity.BaseEntity)
     self.events = {
         ToolAdded = Signal.new(),
         ToolRemoved = Signal.new(),
-        ToolEquipped = Signal.new(),
-        ToolUnequipped = Signal.new()
+        ToolEquip = Signal.new(),
+        ToolUnequip = Signal.new()
     }
 
     return self
