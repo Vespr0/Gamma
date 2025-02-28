@@ -14,13 +14,16 @@ local ClientBackpack = setmetatable({}, {__index = BaseBackpack})
 ClientBackpack.__index = ClientBackpack
 ClientBackpack.Instances = {}
 ClientBackpack.GlobalAdded = Signal.new()
-ClientBackpack.LocalPlayerInstance = nil -- TODO: remove. Keep track of every backpack by entity id instead?
+ClientBackpack.LocalPlayerInstance = nil
+
 -- Network
 local BackpackMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Backpack")
 local ToolUtility = require(ReplicatedStorage.Utility.ToolUtility)
 local Animator = require(script.Parent.Parent.Entities.Animator)
 
-function ClientBackpack.new(entity) -- no longer takes a player as an arg, must take an entity.
+function ClientBackpack.new(entity)
+    if not entity then error("No entity provided") return end
+    
     local self = setmetatable(BaseBackpack.new(entity), ClientBackpack) -- send the entity to the base class
 
     self:setup()

@@ -262,7 +262,11 @@ function ViewmodelManager:createFakeToolComponents(tool, components)
             self.model.Parent = nil -- Hide the model by setting parent to nil
         end,
         show = function(self)
-            self.model.Parent = self.folder -- Show the model by setting parent back to the folder
+            if self.folder and self.folder:IsDescendantOf(game) then -- Ensure folder is valid
+                self.model.Parent = self.folder
+            else
+                warn("Cannot show fake tool: folder is invalid or destroyed.")
+            end
         end
     }
     

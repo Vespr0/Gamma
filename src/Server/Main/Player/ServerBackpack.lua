@@ -15,6 +15,8 @@ local ToolUtility = require(ReplicatedStorage.Utility.ToolUtility)
 ServerBackpack.ItemID = 0
 
 function ServerBackpack.new(entity) 
+    if not entity then error("No entity provided") return end
+    
     local self = setmetatable(BaseBackpack.new(entity), ServerBackpack) 
 
     self.entity = entity

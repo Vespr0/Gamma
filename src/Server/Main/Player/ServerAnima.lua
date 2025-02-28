@@ -43,16 +43,11 @@ function ServerAnima:setupProperties()
 end
 
 function ServerAnima:loadCharacter()
-	print("a")
 	local rig = AssetsDealer.Get("Rigs","Human","Clone")
 	rig.Name = self.player.Name
 	-- Move the rig to a temporary folder
 	rig.Parent = game:GetService("ServerStorage"):WaitForChild("Temp")
-	print(rig:FindFirstChild("Humanoid"))
-	print(rig:FindFirstChild("Humanoid").Health)
-	print(rig:FindFirstChild("Humanoid").MaxHealth)
-	print("b")
-	-- rig.Humanoid.Health = rig.Humanoid.MaxHealth -- TODO: I have to do this, i have no fucking clue why
+	rig.Humanoid.Health = rig.Humanoid.MaxHealth -- TODO: I have to do this, i have no fucking clue why
 
 	self.entity = ServerEntity.new(rig)
 
