@@ -31,9 +31,11 @@ function FirstPerson:set()
 end
 
 function FirstPerson:step(deltaTime: number)
-    local character = self.controller.anima.character
+    local entity = self.controller.anima.entity
+    if not entity then return end
 
-    local velocity = character.PrimaryPart.AssemblyLinearVelocity
+    local rig = entity.rig  
+    local velocity = rig.PrimaryPart.AssemblyLinearVelocity
     local velocityMagnitude = velocity.magnitude
     
     local FOV = FIELD_OF_VIEW+velocityMagnitude
@@ -42,7 +44,7 @@ function FirstPerson:step(deltaTime: number)
     local alpha = deltaTime/5
     self.camera.FieldOfView = Lerp(self.camera.FieldOfView, FOV, alpha)
 
-    for _, d in pairs(character:GetDescendants()) do
+    for _, d in rig:GetDescendants() do
         if d:IsA("BasePart") then
             d.CastShadow = false
             d.LocalTransparencyModifier = 1

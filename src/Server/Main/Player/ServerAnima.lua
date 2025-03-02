@@ -31,7 +31,12 @@ function ServerAnima.new(player: Player)
 	self.entity = nil
 
 	self:setup()
-	
+
+	-- Fire global event when a new entity is added
+	ServerAnima.GlobalAdded:Fire(self)
+	-- Add instance to the table
+	ServerAnima.Instances[self.userId] = self
+
 	print(`Created server anima instance for player "{player.Name}"`)
 
 	return self
@@ -50,15 +55,12 @@ function ServerAnima:loadCharacter()
 	rig.Humanoid.Health = rig.Humanoid.MaxHealth -- TODO: I have to do this, i have no fucking clue why
 
 	self.entity = ServerEntity.new(rig)
+	self.events.EntityAdded:Fire(self.entity)
 
 	self.player.Character = rig
 end
 
 function ServerAnima:setup()
-	-- Fire global event when a new entity is added
-	ServerAnima.GlobalAdded:Fire(self)
-	-- Add instance to the table
-	ServerAnima.Instances[self.userId] = self
 	-- Setup player-specific properties
 	self:setupProperties()
 	-- Setup character loading

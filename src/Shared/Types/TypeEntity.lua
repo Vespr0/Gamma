@@ -14,7 +14,7 @@ export type BaseEntity = {
     name: string,
     displayName: string,
     description: string,
-    model: Model,
+    rig: Model,
     owner: Player
 }
 

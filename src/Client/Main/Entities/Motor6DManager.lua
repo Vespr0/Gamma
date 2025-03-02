@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 -- Modules
 local TypeRig = require(game:GetService("ReplicatedStorage").Types.TypeRig)
 local Trove = require(game:GetService("ReplicatedStorage").Packages.trove)
+local EntityUtility = require(game:GetService("ReplicatedStorage").Utility.Entity)
 -- Motor6DModules
 local Motor6DModules = script.Parent.Motor6DModules
 Motor6DManager.Modules = {} :: {[string]: any}
@@ -96,7 +97,7 @@ function Motor6DManager:addBias(motorName: string, biasName: string, biasType: "
             local current = { offset = Vector3.new(), angles = CFrame.Angles(0, 0, 0) }
             self.dualBiases[motorName][biasName][biasType] = current
 
-            while self.dualBiases[motorName][biasName] do
+            while self.dualBiases[motorName][biasName] and EntityUtility.IsAlive(self.rig) do
                 local deltaTime = RunService.RenderStepped:Wait()
                 lerpBias(current, bias, smoothness * deltaTime)
                 self.dualBiases[motorName][biasName][biasType] = current
@@ -168,10 +169,6 @@ function Motor6DManager:step(deltaTime: number)
 
         motor.C0 = targetC0
         motor.C1 = targetC1
-
-        -- Lerp for smooth transitions
-        -- motor.C0 = motor.C0:Lerp(targetC0, 0.1 * deltaTime)
-        -- motor.C1 = motor.C1:Lerp(targetC1, 0.1 * deltaTime)
     end
 end
 

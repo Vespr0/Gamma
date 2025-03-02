@@ -10,7 +10,9 @@ local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local Game = require(ReplicatedStorage.Utility.Game)
 local Lerp = require(ReplicatedStorage.Utility.Lerp)
+local ClientAnima = require(script.Parent.Parent.Player.ClientAnima):get()
 local MovementMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Movement")
+local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 -- Inputs
 local SprintingInput = require(script.Parent.Parent.Input.Inputs).GetModule("Sprinting")
 local CrouchingInput = require(script.Parent.Parent.Input.Inputs).GetModule("Crouching")
@@ -21,11 +23,13 @@ local SPRINTING_BOOST = 5
 local CROUCHING_PENALTY = 8
 local TRANSITION_SPEED = 3
 
-function Movement.new()
+function Movement.new(entity)
+    if singleton then error("Movement: Singleton already exists.") end
+
     local self = setmetatable({}, Movement)
 
     -- Components
-    self.anima = require(script.Parent.Parent.Player.ClientAnima):get()
+    self.entity = entity
     self.trove = Trove.new()
     -- Variables
     self.boosts = {
@@ -40,42 +44,57 @@ function Movement.new()
 
     self:setup()
 
+    singleton = self
+
     return self
+end
+
+function Movement:setup() 
+    -- Humanoid should use jump height
+    self.entity.humanoid.UseJumpPower = false
+
+    self:setupBoosts()
+
+    self:setupSprinting()
+
+    self.entity.events.Died:Connect(function()
+        self:destroy()
+    end)
 end
 
 function Movement:setupSprinting()
     self.isSprinting = false
 
-    SprintingInput.Event:Connect(function(mode)
+    self.trove:Add(SprintingInput.Event:Connect(function(mode)
         if self.isCrouching then return end
 
         self.isSprinting = mode
-        self.anima.character:SetAttribute("Sprinting",mode)
+        self.entity.rig:SetAttribute("Sprinting",mode)
         --[[ 
             The sprinting attribute is set by the server to ensure synchronization, however, in the case of the local player
             we can set it directly to avoid the delay of the server.
         ]]
         MovementMiddleware.SendMovementAction:Fire("Sprinting",mode)
-    end)
+    end))
 
-    CrouchingInput.Event:Connect(function(mode)
+    self.trove:Add(CrouchingInput.Event:Connect(function(mode)
         if self.isSprinting then return end
         --[[ 
             The same condition applies to the croching attribute.
         ]]
         self.isCrouching = mode
-        self.anima.character:SetAttribute("Crouching",mode)
+        self.entity.rig:SetAttribute("Crouching",mode)
         -- Add camera offsetr
-        self.anima.camera.offsets.Crouching = mode and Vector3.new(0, 0.5, 0) or Vector3.zero
+        ClientAnima.camera.offsets.Crouching = mode and Vector3.new(0, 0.5, 0) or Vector3.zero
         -- Set the crouching attribute on the server and consequently on all the other clients
         MovementMiddleware.SendMovementAction:Fire("Crouching",mode) 
-    end)
+    end))
 
     self.boosts.WalkSpeed.Sprinting = 0
     self.boosts.WalkSpeed.Crouching = 0
     
-    RunService.RenderStepped:Connect(function(deltaTime: number)
-        if not self.anima.character then return end
+    self.trove:Add(RunService.RenderStepped:Connect(function(deltaTime: number)
+        if not EntityUtility.IsAlive(self.entity.rig) then return end
         -- Smooth sprinting transition
         local sprintGoal = self.isSprinting and SPRINTING_BOOST or 0
         local sprintLerp = Lerp(self.boosts.WalkSpeed.Sprinting, sprintGoal, deltaTime * TRANSITION_SPEED)
@@ -85,7 +104,15 @@ function Movement:setupSprinting()
         local crouchGoal = self.isCrouching and -CROUCHING_PENALTY or 0
         local crouchLerp = Lerp(self.boosts.WalkSpeed.Crouching, crouchGoal, deltaTime * TRANSITION_SPEED)
         self.boosts.WalkSpeed.Crouching = math.clamp(crouchLerp,-CROUCHING_PENALTY,0)
-    end)    
+    end))
+end
+
+function Movement:setupBoosts()
+    self.trove:Add(RunService.RenderStepped:Connect(function()
+        for category,_ in self.boosts do
+            self:updateBoostCategory(category)
+        end
+    end))
 end
 
 function Movement:updateBoostCategory(category)
@@ -93,29 +120,33 @@ function Movement:updateBoostCategory(category)
     for _,boost in self.boosts[category] do
         value += boost
     end
-	self.anima.humanoid[category] = self.presets[category] + value
+	self.entity.humanoid[category] = self.presets[category] + value
 end
 
-function Movement:setup() 
-    -- Humanoid should use jump height
-    self.anima.humanoid.UseJumpPower = false
+function Movement:destroy()
+    self.trove:Destroy()
+    singleton = nil
+end
 
-    RunService.RenderStepped:Connect(function()
-        for category,_ in self.boosts do
-            self:updateBoostCategory(category)
+function Movement.Init()    
+    local function checkSingleton()
+        if singleton then
+            warn("Unexpected behaivor, new ClientMovement instance created without the old one being destroyed.")
+            singleton:destroy()
         end
+    end
+
+    warn("a")
+    if ClientAnima.entity then
+        warn("b")
+        checkSingleton()
+        Movement.new(ClientAnima.entity)
+    end
+    ClientAnima.events.EntityAdded:Connect(function(entity)
+        warn("c") 
+        checkSingleton()
+        Movement.new(entity)
     end)
-
-    self:setupSprinting()
 end
-
-function Movement:get()
-	if not singleton then
-		singleton = Movement.new()
-	end
-	return singleton
-end
-
-function Movement.Init() Movement:get() end
 
 return Movement

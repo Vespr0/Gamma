@@ -30,14 +30,21 @@ function ClientAnima:get()
 	return singleton
 end
 
+function ClientAnima:setupEntity(entity)
+	self.entity = entity
+	self.events.EntityAdded:Fire(self.entity)
+end
+
 function ClientAnima:setup()
 	self.camera = Camera.new(self)
 	
 	if self.character then
-		self.entity = ClientEntity.LocalPlayerInstance
+		self:setupEntity(ClientEntity.LocalPlayerInstance)
 	end
-	self.events.EntityAdded:Connect(function()
-		self.entity = ClientEntity.LocalPlayerInstance
+	ClientEntity.GlobalAdded:Connect(function(entity)
+		if entity.isLocalPlayer then
+			self:setupEntity(entity)
+		end
 	end)
 end
 

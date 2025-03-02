@@ -17,17 +17,15 @@ local Trove = require(ReplicatedStorage.Packages.trove)
 local Game = require(ReplicatedStorage.Utility.Game)
 local Signal = require(ReplicatedStorage.Packages.signal)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
-local ClientAnima = require(script.Parent.Parent.Player.ClientAnima):get()
+local ClientAnima = require(script.Parent.Parent.Player.ClientAnima) -- No need to get instance here
 local ClientEntity = require(script.Parent.Parent.Entities.ClientEntity)
+local TypeEntity = require(ReplicatedStorage.Types.TypeEntity)
 
 -- Constants
 local VISIBLE_LIMBS = { Game.Limbs.RightArm, Game.Limbs.LeftArm }
 local VIEWMODEL_WHITELIST = { Game.Limbs.Torso, Game.Limbs.RightArm, Game.Limbs.LeftArm, Game.Limbs.RightLeg, "HumanoidRootPart", "Meshes" }
 local CAMERA = Workspace.CurrentCamera
 local VIEWMODEL_SCALE = 0.5
-
--- Singleton
-local singleton = nil
 
 -- Helper functions
 local function scaleCFrame(cframe: CFrame, scale: number)
@@ -42,19 +40,13 @@ local function destroyFakeTool(fakeTool)
     fakeTool.motor:Destroy()
 end
 
-function ViewmodelManager.new()
-    if singleton then
-        singleton:destroy()
-        singleton = nil
-    end
+function ViewmodelManager.new(entity: TypeEntity.ClientEntity)
+    assert(entity, "Entity is nil!")
 
     local self = setmetatable({}, ViewmodelManager)
     
-    self.anima = ClientAnima.get()
-
-    self.entity = ClientEntity.LocalPlayerInstance
-    if not self.entity then error("Attempt to create viewmodel manager instance without entity") return end
-
+    self.anima = ClientAnima:get() -- should be local to player
+    self.entity = entity
     self.backpack = require(script.Parent.Parent.Player.ClientBackpack).LocalPlayerInstance
     if not self.backpack then error("Attempt to create viewmodel manager instance without backpacks") return end
 
@@ -62,10 +54,9 @@ function ViewmodelManager.new()
     self.fakeTools = {}
     self.rig = nil
     self.events = { NewRig = Signal.new() }
+    self.trove = Trove.new()
 
     self:setup()
-
-    singleton = self
 
     return self
 end
@@ -77,6 +68,10 @@ end
 function ViewmodelManager:setup()
     self:createNewRig()
     self:setupToolEvents()
+
+    self.trove:Connect(self.entity.events.Died, function()
+        self:destroy()
+    end)
 end
 
 function ViewmodelManager:setupToolEvents()
@@ -113,8 +108,7 @@ end
 
 function ViewmodelManager:createNewRig()
     self:cleanupExistingRig()
-    local character = self.anima.character
-    if not character then return end
+    local character = self.entity.rig
 
     self.rig = self:cloneCharacterRig(character)
     self:configureRigAppearance()
@@ -172,10 +166,7 @@ end
 
 function ViewmodelManager:setupRigSync()
     local trove = Trove.new()
-    self.anima.events.EntityDied:Connect(function()
-        trove:Destroy()
-    end)
-    trove:Connect(RunService.RenderStepped, function(deltaTime)
+    self.trove:Connect(RunService.RenderStepped, function(deltaTime)
         self:updateRigPosition()
         self:syncMotors()
     end)
@@ -195,7 +186,7 @@ function ViewmodelManager:syncMotors()
         RootJoint = self.rig.HumanoidRootPart.RootJoint,
     }
 
-    local character = self.anima.character
+    local character = self.entity.rig
     local characterMotors = {
         RightShoulder = character.Torso["Right Shoulder"],
         LeftShoulder = character.Torso["Left Shoulder"],
@@ -287,19 +278,21 @@ function ViewmodelManager:destroy()
     for _, fakeTool in self.fakeTools do
         destroyFakeTool(fakeTool)
     end
-    self.rig:Destroy()
-    for _,event in self.events do
-        event:Destroy()
+    if self.rig then
+        self.rig:Destroy()
     end
-    singleton = nil
+    if self.trove then
+        self.trove:Destroy()
+    end
 end
 
 function ViewmodelManager.Init()
     if ClientEntity.LocalPlayerInstance then
-        ViewmodelManager.new()
+        ViewmodelManager.new(ClientEntity.LocalPlayerInstance)
     end
-    ClientAnima.events.EntityAdded:Connect(function()
-        ViewmodelManager.new()
+    ClientEntity.GlobalAdded:Connect(function(entity)
+        if not entity.isLocalPlayer then return end
+        ViewmodelManager.new(entity)
     end)
 end
 

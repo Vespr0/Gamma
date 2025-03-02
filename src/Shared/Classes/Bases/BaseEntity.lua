@@ -2,6 +2,8 @@ local BaseEntity = {}
 BaseEntity.__index = BaseEntity
 BaseEntity.__type = ""
 
+-- TODO: Add trove
+
 -- Services 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,6 +28,7 @@ function BaseEntity.new(rig,id: number)
 	self.rig = rig
 	self.id = id
 	self.root = rig:FindFirstChild("HumanoidRootPart")
+	self.height = 0 :: number
 	
 	-- Events
 	self.events = {
@@ -54,14 +57,19 @@ function BaseEntity:setupEvents()
 end
 
 function BaseEntity:setupRig()
+	-- Rig's humanoid
 	self.humanoid = self.rig:WaitForChild("Humanoid") 
 		or warn(`Entity "{self.rig.Name}" with id "{self.id}" has no humanoid.`)
+	-- Rig's animator
 	if not self.humanoid:WaitForChild("Animator") then 
 		warn(`Entity "{self.rig.Name}" with id "{self.id}" has no animator.`)
 	end
+	-- Rig's primary part
 	self.root = self.rig.PrimaryPart 
 		or warn(`Entity "{self.rig.Name}" with id "{self.id}" has no primary part.`)
-	
+	-- Height of the rig
+	self.height = self.rig:GetExtentsSize().Y :: number
+
 	self.humanoid.Died:Connect(function()
 		self.events.Died:Fire()
 	end)

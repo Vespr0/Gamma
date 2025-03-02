@@ -2,6 +2,8 @@ local Entity = {}
 
 -- TODO: Typechecking
 
+-- TODO: this is actually rig utility not entity utility
+
 -- Healthy means with a humanoid and health above 0
 function Entity.IsHealthy(rig)
 	if not rig:FindFirstChild("Humanoid") then return false end

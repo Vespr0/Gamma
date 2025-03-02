@@ -31,14 +31,15 @@ function ClientEntity.new(rig: TypeRig.Rig)
 	local id = rig:GetAttribute("ID") :: number
 	local self = setmetatable(BaseEntity.new(rig,id), ClientEntity)
 
-	-- Store the instance
-	ClientEntity.Instances[id] = self
-	ClientEntity.GlobalAdded:Fire(self)
 	-- Store the instance linked to the current player character
 	self.isLocalPlayer = rig == LocalPlayer.Character
 	if self.isLocalPlayer then ClientEntity.LocalPlayerInstance = self end
 	
 	self:setup()
+
+	-- Store the instance
+	ClientEntity.Instances[id] = self
+	ClientEntity.GlobalAdded:Fire(self)
 
 	print(`Created client entity instance for rig "{rig.Name}"`)
 	

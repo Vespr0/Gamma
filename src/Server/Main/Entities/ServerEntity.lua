@@ -38,15 +38,15 @@ function ServerEntity:setup()
 	self:setupHumanoid()
 
 	CollectionService:AddTag(self.rig,Game.Tags.Entity)	
-	
-	ServerEntity.Instances[self.id] = self
-	ServerEntity.GlobalAdded:Fire(self)
 
 	self:setupBackpack()
 
 	self.events.Died:Connect(function()
 		self:destroy()
 	end)
+
+	ServerEntity.Instances[self.id] = self
+	ServerEntity.GlobalAdded:Fire(self)
 end
 
 function ServerEntity.Get(id: number|string)
@@ -63,10 +63,6 @@ end
 
 function ServerEntity:destroy()
 	self:destroyBase()
-end
-
-function ServerEntity.Init() 
-
 end
 
 return ServerEntity

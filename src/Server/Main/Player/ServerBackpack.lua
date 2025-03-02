@@ -4,6 +4,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Modules
 local BaseBackpack = require(ReplicatedStorage.Classes.Bases.BaseBackpack)
 local Signal = require(ReplicatedStorage.Packages.signal)
+local Trove = require(ReplicatedStorage.Packages.trove)
+local TypeEntity = require(ReplicatedStorage.Types.TypeEntity)
 -- Variables
 local ServerBackpack = setmetatable({}, {__index = BaseBackpack})
 ServerBackpack.__index = ServerBackpack
@@ -14,14 +16,15 @@ local ToolUtility = require(ReplicatedStorage.Utility.ToolUtility)
 
 ServerBackpack.ItemID = 0
 
-function ServerBackpack.new(entity) 
+function ServerBackpack.new(entity: TypeEntity.ServerEntity) 
     if not entity then error("No entity provided") return end
 
     local self = setmetatable(BaseBackpack.new(entity), ServerBackpack) 
 
     self.entity = entity
     self.player = Players:GetPlayerFromCharacter(entity.rig) or nil :: Player?
-        
+    self.trove = Trove.new()
+
     self:setup()
 
     -- Subclass Events
@@ -34,38 +37,33 @@ function ServerBackpack.new(entity)
 end
 
 function ServerBackpack:setup()
-    self.entity.events.ChildAdded:Connect(function(child)
+    self.trove:Add(self.entity.events.ChildAdded:Connect(function(child)
         if not child:IsA("Tool") then return end
 
         self.events.ToolEquip:Fire(child)
-    end)
+    end))
 
-    self.entity.events.ChildRemoved:Connect(function(child)
+    self.trove:Add(self.entity.events.ChildRemoved:Connect(function(child)
         if not child:IsA("Tool") then return end
 
         self.events.ToolUnequip:Fire(child)
-    end)
+    end))
 
     -- Listen for tool equip requests from the client
-    BackpackMiddleware.ReadToolEquip:Connect(function(player: Player, index: number)
-        local ServerAnima = require(script.Parent.ServerAnima)
-        local anima = ServerAnima.Get(player.UserId)
-        local entity = anima.entity
-        warn(entity,self.entity)
-        if entity.id ~= self.entity.id then return end
-        
-        self:equipTool(index, player)
-    end)
-
-    -- Listen for tool unequip requests from the client
-    BackpackMiddleware.ReadToolUnequip:Connect(function(player: Player)
-        local ServerAnima = require(script.Parent.ServerAnima)
-        local anima = ServerAnima.Get(player.UserId)
-        local entity = anima.entity
-        if entity.id ~= self.entity.id then return end
-        
-        self:unequipTool(player)
-    end)
+    if self.player then
+        self.trove:Add(BackpackMiddleware.ReadToolEquip:Connect(function(player: Player, index: number)
+            if player ~= self.player then return end
+            
+            self:equipTool(index, player)
+        end))
+    
+        -- Listen for tool unequip requests from the client
+        self.trove:Add(BackpackMiddleware.ReadToolUnequip:Connect(function(player: Player)
+            if player ~= self.player then return end
+            
+            self:unequipTool(player)
+        end))
+    end
 
     local function debugItems()
         warn("Debugging Items")
@@ -180,14 +178,8 @@ end
 
 function ServerBackpack:destroy()
     self:destroyBase()
+    self.trove:Destroy()
     table.clear(self)
-end
-
-function ServerBackpack.Init()
-    local ServerEntity = require(script.Parent.Parent.Entities.ServerEntity)
-    ServerEntity.GlobalAdded:Connect(function(entity)
-        ServerBackpack.new(entity)
-    end)
 end
 
 return ServerBackpack
