@@ -20,7 +20,12 @@ local function setupModules()
 end
 
 function Inputs.IsValidKey(validKeys: {Enum.KeyCode},key: Enum.KeyCode)
-	return table.find(validKeys,key)
+	for _,validKey in validKeys do
+        if validKey == key then
+            return true
+        end
+    end
+    return false
 end
 
 function Inputs.GetModule(name)

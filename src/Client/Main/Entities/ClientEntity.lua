@@ -54,7 +54,6 @@ function ClientEntity:setup()
 	self:setupBackpack()
 
 	self.events.Died:Connect(function()
-		self.Motor6DManager:destroy()
 		self:destroy()
 	end)
 end
@@ -70,12 +69,16 @@ function ClientEntity:setupAnimations()
 end
 
 function ClientEntity:setupBackpack()
-	ClientBackpack.new(self)
+	self.backpack = ClientBackpack.new(self)
 end
 
 function ClientEntity:destroy()
+	self.Motor6DManager:destroy()
+
+	ClientEntity.Instances[tostring(self.id)] = nil
+	if self.isLocalPlayer then ClientEntity.LocalPlayerInstance = nil end
+
 	self:destroyBase()
-	table.clear(self)
 end
 
 function ClientEntity.Init() 

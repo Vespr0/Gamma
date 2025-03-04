@@ -36,10 +36,10 @@ local function calculateTargetTilt(moveDirection: Vector3, speed: number, primar
         local dotProduct = moveDirection:Dot(forwardDirection)
 
         -- Determine the tilt direction based on the dot product
-        local tiltDirection = dotProduct > 0 and 1 or -1
+        local tiltDirection = dotProduct > 0 and 1 or -2
 
         -- Calculate the tilt based on the speed and direction
-        local tilt = (speed/2 / MAX_SPEED) * MAX_TILT * tiltDirection
+        local tilt = (speed / MAX_SPEED) * MAX_TILT * tiltDirection
         return math.clamp(tilt, -MAX_TILT, MAX_TILT)
     end
     return 0

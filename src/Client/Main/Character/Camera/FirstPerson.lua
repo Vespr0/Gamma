@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 -- Modules
 local Lerp = require(ReplicatedStorage.Utility.Lerp) 
+local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 -- Settings
@@ -32,7 +33,7 @@ end
 
 function FirstPerson:step(deltaTime: number)
     local entity = self.controller.anima.entity
-    if not entity then return end
+    if not entity or not EntityUtility.IsAlive(entity.rig) then return end
 
     local rig = entity.rig  
     local velocity = rig.PrimaryPart.AssemblyLinearVelocity

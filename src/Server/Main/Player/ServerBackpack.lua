@@ -13,6 +13,7 @@ ServerBackpack.Instances = {}
 -- Network
 local BackpackMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Backpack")
 local ToolUtility = require(ReplicatedStorage.Utility.ToolUtility)
+local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 
 ServerBackpack.ItemID = 0
 
@@ -22,7 +23,7 @@ function ServerBackpack.new(entity: TypeEntity.ServerEntity)
     local self = setmetatable(BaseBackpack.new(entity), ServerBackpack) 
 
     self.entity = entity
-    self.player = Players:GetPlayerFromCharacter(entity.rig) or nil :: Player?
+    self.player = EntityUtility.GetPlayerFromEntityID(entity.id)
     self.trove = Trove.new()
 
     self:setup()
@@ -32,6 +33,8 @@ function ServerBackpack.new(entity: TypeEntity.ServerEntity)
     self.events.ToolUnequip = Signal.new()
     
     ServerBackpack.Instances[entity.id] = self
+
+    warn(entity.id,self.player)
 
     return self
 end
@@ -68,7 +71,7 @@ function ServerBackpack:setup()
     local function debugItems()
         warn("Debugging Items")
         self:addTool(ToolUtility.GetFromName("Brick", true))
-        self:addTool(ToolUtility.GetFromName("Sword", true))    
+        self:addTool(ToolUtility.GetFromName("Brick", true))    
     end
 
     debugItems()
@@ -102,7 +105,7 @@ function ServerBackpack:equipTool(index: number, player: Player | nil)
         self.equippedTool = tool
         -- Set EquippedTool attribute
         self.entity.rig:SetAttribute("EquippedTool", tool.Name)
-
+        self.entity.rig:SetAttribute("EquippedToolID", tool:GetAttribute("ID"))
         -- Tell all other clients
         local blacklistedUserId = player and player.UserId or nil
         BackpackMiddleware.SendToolEquip:Fire(self.entity.id,index,blacklistedUserId)

@@ -7,19 +7,22 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Modules
 local Signal = require(ReplicatedStorage.Packages.signal)
-local Item = require(ReplicatedStorage.Classes.Item)
+local TypeEntity = require(ReplicatedStorage.Types.TypeEntity)
+-- Network
 local AbilitiesMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Abilities")
 -- Constants
 local IS_SERVER = RunService:IsServer()
 
-function BaseAbility.new(tool,name: string,config)
+function BaseAbility.new(name: string,entity: TypeEntity.BaseEntity,tool,config)
     local self = setmetatable({}, BaseAbility)
 
-	if not tool then error("Item is missing") return end
-	if not name then error("Ability name is missing") return end
-	if not config then error("Ability configuration is missing") return end
+	if not name then error("Ability name is missing"); return end
+	if not entity then error("Entity is missing"); return end
+	if not tool then error("Tool is missing"); return end
+	if not config then error("Ability configuration is missing"); return end
 	
 	-- Basic info
+	self.entity = entity
 	self.name = name
 	self.config = config
 
@@ -30,30 +33,37 @@ function BaseAbility.new(tool,name: string,config)
 	self.cooldownDuration = self.config.CooldownDuration
 	self.cooldown = 0
 
+	self.events = {
+		Destroyed = Signal.new(),
+	}
+
     return self
 end
 
-function BaseAbility:readAction(func)
-	AbilitiesMiddleware.ReadAbilityAction:Connect(function(player: Player,abilityName: string,...)
-		local player = Players:GetPlayerByUserId(player.UserId)
-		local toolPlayer = Players:GetPlayerByUserId(self.tool:GetAttribute("Owner"))
-		if not toolPlayer then error(`Item has been used but has no owner.`) return end
-		
-		if not toolPlayer then return end
-		
-		-- Make sure the right player is requesting.
-		if player ~= toolPlayer then return end
-		
-		if abilityName ~= self.name then return end
-		func(player,...)
+function BaseAbility:setup()
+	self.tool.Destroyed:Connect(function() -- TODO: Potentially insufficent garbage collection
+		self.events.Destroyed:Fire() 
 	end)
 end
 
-function BaseAbility:sendAction(...)
-	return AbilitiesMiddleware.SendAbilityAction(self.name,...)
+function BaseAbility:readAction(func)
+	AbilitiesMiddleware.ReadAbilityAction:Connect(function(abilityName: string,entityID: number,...)
+		if self.entity.id ~= entityID then return end
+		if abilityName ~= self.name then return end
+
+		func(...)
+	end)
 end
 
-function BaseAbility:isToolEquip()
+function BaseAbility:getFakeTool()
+	return self.tool
+end
+
+function BaseAbility:sendAction(...)
+	return AbilitiesMiddleware.SendAbilityAction(self.name,self.entity.id,self.tool:GetAttribute("Index"),...)
+end
+
+function BaseAbility:isToolEquipped()
 	return self.tool:GetAttribute("Equipped")
 end
 

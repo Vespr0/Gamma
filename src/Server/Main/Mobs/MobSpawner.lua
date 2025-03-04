@@ -17,9 +17,14 @@ function MobSpawner.Spawn(rigDirectory: string, cframe: CFrame?, className: stri
 	if rig then
 		rig.Name = "Mob"
 		
-		ServerEntity.new(rig)
+		local entity = ServerEntity.new(rig)
 		
 		rig:PivotTo(cframe or CFrame.new(0,50,0))
+
+		task.spawn(function()
+			task.wait(15)
+			entity.backpack:equipTool(1)
+		end)
 	else
 		warn(`Rig directory "{rigDirectory}" does not exist. Failed to spawn mob.`)
 	end

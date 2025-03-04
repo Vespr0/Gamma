@@ -1,48 +1,50 @@
--- src/Client/Main/Player/ClientAbilities.lua
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local ClientBackpack = require(script.Parent.ClientBackpack) 
-local ToolUtility = require(ReplicatedStorage.Utility.ToolUtility) 
-local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
-
 local ClientAbilities = {}
+ClientAbilities.__index = ClientAbilities
 
-local abilities = {} -- Store ability instances
+-- Services 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+-- Modules
+local Signal = require(ReplicatedStorage.Packages.signal)
+local TypeEntity = require(ReplicatedStorage.Types.TypeEntity)
+local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
+-- Folders
+local AbiltiesFolder = ReplicatedStorage.Abilities
+-- Network
+local AbilitiesMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Abilities")
 
--- Helper function to create a client ability instance
-local function createClientAbility(tool)
-    local abilityConfig = ToolUtility.GetConfig(tool) -- TODO 
-    if not abilityConfig then return end
+function ClientAbilities.new(clientBackpack)
+    local self = setmetatable({}, ClientAbilities)
 
-    for abilityName, config in pairs(abilityConfig) do
-        
+	if not clientBackpack then error("ClientBackpack is missing"); return end
+
+    self.backpack = clientBackpack
+
+    self:setup()
+
+    return self
+end
+
+-- TODO: Add error handling
+function ClientAbilities:setupTool(tool)
+    local name = tool.Name
+    local asset = AssetsDealer.Get("Tools", name)
+    local config = require(asset.Config)
+
+    self.abilities = {}
+    for _, abilityConfig in config.abilities do
+        local abilityName = abilityConfig.name
+        local clientAbility = require(AbiltiesFolder[abilityName]["ClientAbility"..abilityName])
+        self.abilities[abilityName] = clientAbility.new(self.backpack.entity,tool,abilityConfig)
     end
 end
 
-local function destroyClientAbility(tool)
-	if abilities[tool] then
-		abilities[tool]:destroy()
-		abilities[tool] = nil
-		print("Destroyed client ability for tool", tool.Name)
-	end
-end
-
-function ClientAbilities.Init()
-    -- When the local player instance is created, go through all current tools and add abilities
-    -- ClientBackpack.LocalPlayerInstance.events.ToolAdded:Connect(function(index)
-    --     local tool = ClientBackpack.LocalPlayerInstance:GetToolAtIndex(index)
-    --     if tool then
-    --         createClientAbility(tool)
-    --     end
-    -- end)
-
-    -- ClientBackpack.LocalPlayerInstance.events.ToolRemoved:Connect(function(index)
-    --     local tool = ClientBackpack.LocalPlayerInstance:GetToolAtIndex(index)
-    --     if tool then
-    --         destroyClientAbility(tool)
-    --     end
-    -- end)
+function ClientAbilities:setup()
+    -- For each tool get it's abilities
+    for _, tool in self.backpack.tools:GetChildren() do
+        self:setupTool(tool)
+    end
 end
 
 return ClientAbilities

@@ -14,10 +14,20 @@ end
 
 -- Alive means not destroyed and healthy
 function Entity.IsAlive(rig)
-	if not rig or rig.Parent then return false end
+	if not rig or not rig.Parent then return false end
 	if not Entity.IsHealthy(rig) then return false end
 	
 	return true
+end
+
+function Entity.GetPlayerFromEntityID(entityID: number)
+	for _,player in game:GetService("Players"):GetPlayers() do
+		if tonumber(player:GetAttribute("EntityID")) == entityID then
+			return player
+		end
+	end
+
+	return nil
 end
 
 return Entity

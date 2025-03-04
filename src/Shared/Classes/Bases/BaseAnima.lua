@@ -25,6 +25,7 @@ function BaseAnima.new(player)
 	-- self.height = 0 :: number
 
 	-- Events
+	self.trove = Trove.new()
 	self.events = {
 		Added = Signal.new(),
 		Removed = Signal.new(),
@@ -71,6 +72,12 @@ end
 function BaseAnima:setupBase()
 	-- Fire the Added event
 	self.events.Added:Fire(self)
+
+	self.events.EntityAdded:Connect(function(entity)
+		entity.events.Died:Connect(function()
+			self.events.EntityDied:Fire()
+		end)
+	end)
 end
 
 -- function BaseAnima:setupCharacter(character: TypeRig.Rig)

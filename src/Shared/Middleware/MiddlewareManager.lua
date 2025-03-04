@@ -1,4 +1,3 @@
---!strict
 local MiddlewareManager = {}
 
 -- Services
@@ -8,7 +7,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = ReplicatedStorage.Remotes
 local Modules = script.Parent.Modules
 -- Modules
-local Loading = require(ReplicatedStorage.Utility.Loading)
 local Signal = require(ReplicatedStorage.Packages.signal)
 -- Variables
 local initialized = false

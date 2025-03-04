@@ -38,7 +38,7 @@ end
 function ClientAnima:setup()
 	self.camera = Camera.new(self)
 	
-	if self.character then
+	if ClientEntity.LocalPlayerInstance then
 		self:setupEntity(ClientEntity.LocalPlayerInstance)
 	end
 	ClientEntity.GlobalAdded:Connect(function(entity)

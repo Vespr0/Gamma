@@ -14,8 +14,9 @@ local ClientAnima = require(script.Parent.Parent.Player.ClientAnima):get()
 local MovementMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Movement")
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 -- Inputs
-local SprintingInput = require(script.Parent.Parent.Input.Inputs).GetModule("Sprinting")
-local CrouchingInput = require(script.Parent.Parent.Input.Inputs).GetModule("Crouching")
+local Inputs = require(script.Parent.Parent.Input.Inputs)
+local SprintingInput = Inputs.GetModule("Sprinting")
+local CrouchingInput = Inputs.GetModule("Crouching")
 -- Variables
 local singleton = nil
 
@@ -50,9 +51,6 @@ function Movement.new(entity)
 end
 
 function Movement:setup() 
-    -- Humanoid should use jump height
-    self.entity.humanoid.UseJumpPower = false
-
     self:setupBoosts()
 
     self:setupSprinting()
@@ -136,14 +134,11 @@ function Movement.Init()
         end
     end
 
-    warn("a")
     if ClientAnima.entity then
-        warn("b")
         checkSingleton()
         Movement.new(ClientAnima.entity)
     end
     ClientAnima.events.EntityAdded:Connect(function(entity)
-        warn("c") 
         checkSingleton()
         Movement.new(entity)
     end)

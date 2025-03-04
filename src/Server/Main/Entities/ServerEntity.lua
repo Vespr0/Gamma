@@ -18,12 +18,15 @@ ServerEntity.Instances = {}
 ServerEntity.GlobalAdded = Signal.new()
 ServerEntity.Counter = 0
 
-function ServerEntity.new(rig)
+function ServerEntity.new(rig,player: Player | nil)
 	if not EntityUtility.IsHealthy(rig) then warn(`Rig "{rig.Name}" is not healthy, cannot create server entity instance`) return end
 
 	ServerEntity.Counter += 1
 	local id = ServerEntity.Counter
 	local self = setmetatable(BaseEntity.new(rig,id), ServerEntity)
+
+	-- Player entity id attribute
+	if player then player:SetAttribute("EntityID", id) end
 
 	self:setup()
 
@@ -55,10 +58,12 @@ end
 
 function ServerEntity:setupHumanoid()
 	self.humanoid.BreakJointsOnDeath = false
+	-- Humanoid should use jump height
+	self.humanoid.UseJumpPower = false
 end
 
 function ServerEntity:setupBackpack()
-	ServerBackpack.new(self)
+	self.backpack = ServerBackpack.new(self)
 end
 
 function ServerEntity:destroy()

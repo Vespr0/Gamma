@@ -54,8 +54,10 @@ function ServerAnima:loadCharacter()
 	rig.Parent = game:GetService("ServerStorage"):WaitForChild("Temp")
 	rig.Humanoid.Health = rig.Humanoid.MaxHealth -- TODO: I have to do this, i have no fucking clue why
 
-	self.entity = ServerEntity.new(rig)
+	self.entity = ServerEntity.new(rig,self.player)
 	self.events.EntityAdded:Fire(self.entity)
+
+	warn("Applied entityID attribute to player")
 
 	self.player.Character = rig
 end
@@ -66,6 +68,7 @@ function ServerAnima:setup()
 	-- Setup character loading
 	self:loadCharacter()
 	self.events.EntityDied:Connect(function()
+		print("Player died")
 		task.wait(Game.RespawnTime)
 		self:loadCharacter()
 	end)

@@ -14,7 +14,7 @@ local function validateToolRig(asset)
 	rootPart.Anchored = true
 
 	-- Check if any parts have collisions on
-	local model = asset:FindFirstChildOfClass("Tool"):FindFirstChild("Model")
+	local model = asset:FindFirstChild("Tool"):FindFirstChild("Model")
 	for i, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
 			if part.CanCollide then

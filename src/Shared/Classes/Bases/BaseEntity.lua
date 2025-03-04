@@ -23,8 +23,7 @@ function BaseEntity.new(rig,id: number)
 	
 	assert(typeof(rig) == "Instance" and rig:IsA("Model"),"Rig is not a model")
 	assert(typeof(id) == "number","ID is not a number")
-	
-	self.player = Players:GetPlayerFromCharacter(rig) or nil
+
 	self.rig = rig
 	self.id = id
 	self.root = rig:FindFirstChild("HumanoidRootPart")
