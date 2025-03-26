@@ -6,48 +6,50 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 
-local function checkParams(rig,ability)
-	if typeof(ability) ~= "string" then warn("Invalid request, ability must be a string.") return end
-	
-	local isAlive = EntityUtility.IsAlive(rig)
-
-	-- Make sure the player's character is alive.
-	if not isAlive then warn("Player's character must be alive.") return end
-	
-	return true
+local function checkAbilityNameAndToolIndex(abilityName, toolIndex)
+	assert(typeof(abilityName) == "string", "Invalid request, ability name must be a string.")
+	assert(typeof(toolIndex) == "number", "Invalid request, tool index must be a number.")
 end
 
--- function Middleware.Init(util)
---     if util.isServer then
---         -- Read Server
---         local ReadServer = util.remote.OnServerEvent
+local function checkEntityID(entityID)
+	assert(typeof(entityID) == "number", "Invalid request, entity ID must be a number.")
+end
 
--- 		Middleware.ReadAbility = util.signal.new()
+function Middleware.Init(util)
+    if util.isServer then
+        -- Read Server
+        local ReadServer = util.remote.OnServerEvent
 
--- 		ReadServerRemote:Connect(function(player, ability, ...)
--- 			if not checkParams(player,ability) then return end
+		Middleware.ReadAbility = util.signal.new()
+
+		ReadServer:Connect(function(player, abilityName, toolIndex,...)
+			checkAbilityNameAndToolIndex(abilityName, toolIndex)
 			
--- 			Middleware.ReadAbility:Fire(player,ability, ...)
---         end)
--- 		-- Send Server 
--- 		Middleware.SendAbility = util.signal.new() -- (Used by NPCs)
+			local entityID = EntityUtility.GetEntityIDFromPlayer(player)
+			print(player.Character)
+			Middleware.ReadAbility:Fire(entityID, abilityName, toolIndex,...)
+        end)
 
--- 		Middleware.SendAbility:Connect(function(player, ability, ...)
--- 			if not checkParams(player,ability) then return end
-			
--- 			util.remote:FireClient(player,ability,...)
--- 		end)
+		-- Send Server 
+		Middleware.ReplicateAbility = util.signal.new()
 
---     else
---         -- Send Client
--- 		Middleware.SendAbility = util.signal.new()
+		-- Replicate ability to other clients
+		Middleware.ReplicateAbility:Connect(function(entityID: number, abilityName, toolIndex,...)
+			checkAbilityNameAndToolIndex(abilityName, toolIndex)
+			checkEntityID(entityID)
 
--- 		Middleware.SendAbility:Connect(function(ability,...)
--- 			if not checkActionParams(Players.LocalPlayer,ability) then return end
-			
--- 			util.remote:FireServer(ability,...)
---         end)
---     end
--- end
+			util.remote:FireClient(entityID, abilityName, toolIndex,...)
+		end)
+    else
+        -- Send Client
+		Middleware.SendAbility = util.signal.new()
+
+		Middleware.SendAbility:Connect(function(abilityName: string, toolIndex: number,...)
+			checkAbilityNameAndToolIndex(abilityName, toolIndex)
+
+			util.remote:FireServer(abilityName,toolIndex,...)
+        end)
+    end
+end
 
 return Middleware

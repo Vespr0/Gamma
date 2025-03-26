@@ -95,13 +95,14 @@ function ClientBackpack:attachHandle(dummyTool)
     if not dummyTool then warn("No dummy tool provided") return end
 
     local itemAsset = ToolUtility.GetAsset(dummyTool.Name)
-    local handleMotor6D = itemAsset:FindFirstChildOfClass("Motor6D")
+    local itemAssetRig = itemAsset:FindFirstChild("Rig")
+    local handleMotor6D = itemAssetRig:FindFirstChildOfClass("Motor6D")
 
     if handleMotor6D then
         handleMotor6D = handleMotor6D:Clone()
 
         local equippedToolHandle = dummyTool.Model:FindFirstChild("Handle")
-        handleMotor6D.Parent = dummyTool
+        handleMotor6D.Parent = self.entity.rig
         handleMotor6D.Part0 = self.entity.rig:FindFirstChild("Right Arm")
         handleMotor6D.Part1 = equippedToolHandle
     else
@@ -131,7 +132,7 @@ function ClientBackpack:equipTool(index: number)
         -- Attach handle
         self:attachHandle(dummyTool)
         -- Play hold animation
-        self.entity.animator:play("Base","Hold")
+        -- self.entity.animator:play("Base","Hold")
         print("Equipped tool: "..tool.Name,"Entity ID: "..self.entity.id)
     end
 end
@@ -147,7 +148,7 @@ function ClientBackpack:unequipTool()
     end
     self.equippedTool = nil
     -- Stop hold animation
-    self.entity.animator:stop("Base","Hold")
+    -- self.entity.animator:stop("Base","Hold")
 end
 
 return ClientBackpack

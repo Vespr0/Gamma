@@ -16,11 +16,17 @@ function MobSpawner.Spawn(rigDirectory: string, cframe: CFrame?, className: stri
 	
 	if rig then
 		rig.Name = "Mob"
-		
-		local entity = ServerEntity.new(rig)
-		
 		rig:PivotTo(cframe or CFrame.new(0,50,0))
 
+		local entity = ServerEntity.new(rig)		
+		entity.humanoid.WalkSpeed = 8
+
+		task.spawn(function()
+			while true do
+				rig.Humanoid:MoveTo(Vector3.new(math.random(-30,30),0,math.random(-30,30)))
+				task.wait(2)
+			end
+		end)
 		task.spawn(function()
 			task.wait(15)
 			entity.backpack:equipTool(1)

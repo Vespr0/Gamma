@@ -78,7 +78,7 @@ function Animator:setupAnimations()
 	self:load("Base", "Run", "Movement/Generic/Run")
 	self:load("Base", "Jump", "Movement/Generic/Jump")
 	self:load("Base", "FreeFalling", "Movement/Generic/FreeFalling")
-	self:load("Base","Hold","Tools/Generic/Hold")
+	-- self:load("Base","Hold","Tools/Generic/Hold")
 end
 
 function Animator:doesAnimationExist(folderName:string, actionName:string)
@@ -93,6 +93,7 @@ function Animator:load(folderName:string, actionName:string, assetDirectory:stri
 	end
 
 	if not self.loaded[folderName] then self.loaded[folderName] = {} end
+	warn("Load",folderName,actionName)
 	self.loaded[folderName][actionName] = self.animator:LoadAnimation(animation)
 end
 
@@ -101,6 +102,7 @@ function Animator:play(folderName:string, actionName:string, fadeTime:number, we
 		warn(`No loaded animation to play with folder name: "{folderName}" and action name: "{actionName}".`)
 		return
 	end
+	warn(self.animator:GetPlayingAnimationTracks())
 	self.loaded[folderName][actionName]:Play(fadeTime, weight, speed)
 end
 
@@ -110,6 +112,14 @@ function Animator:stop(folderName:string, actionName: string, fadeTime: number)
 		return
 	end
 	self.loaded[folderName][actionName]:Stop(fadeTime)
+end
+
+function Animator:adjustSpeed(folderName:string, actionName: string, speed: number)
+	if not self:doesAnimationExist(folderName, actionName) then
+		warn(`No loaded animation to adjust speed with folder name: "{folderName}" and action name: "{actionName}".`)
+		return
+	end
+	self.loaded[folderName][actionName]:AdjustSpeed(speed)
 end
 
 function Animator:connectEvents()

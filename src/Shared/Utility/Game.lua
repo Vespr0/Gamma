@@ -11,7 +11,8 @@ Game.Folders = {
 	Structures = workspace:WaitForChild("Map"):WaitForChild("Structures"),
 	Entities = workspace:WaitForChild("Entities"),
 	Voxels = workspace:WaitForChild("Map"):WaitForChild("Voxels"),
-	Liquids = workspace:WaitForChild("Nodes"):WaitForChild("Liquids")
+	Liquids = workspace:WaitForChild("Nodes"):WaitForChild("Liquids"),
+	Debug = workspace:WaitForChild("Nodes"):WaitForChild("Debug")
 }
 -- Tags
 Game.Tags = {

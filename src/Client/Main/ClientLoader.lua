@@ -6,6 +6,9 @@ local ContentProvider = game:GetService("ContentProvider")
 -- Modules
 local Game = require(ReplicatedStorage.Utility.Game)
 local Loading = require(ReplicatedStorage.Utility.Loading)
+local Conch = require(ReplicatedStorage.Packages.conch)
+local ConchUi = require(ReplicatedStorage.Packages.conch_ui)
+local ProjectileManager = require(ReplicatedStorage.Abilities.ProjectileManager)
 -- Variables
 local context = ""
 local progress = 0
@@ -34,15 +37,20 @@ local function preload()
     print("Assets loaded")
 end
 
-local function loadModules()
-	-- Modules
+local function load()
     setContext("Loading modules")
     setProgress(0)
-
+    -- Load Assets
 	Loading.LoadAssetsDealer()
+    -- Load Modules
     Loading.LoadModules(script.Parent,{script})
     -- Load Ui
     require(script.Parent.Parent.Ui.Ui).Init()
+    -- Load Conch
+    Conch.initiate_default_lifecycle()
+    ConchUi.bind_to(Enum.KeyCode.F4)
+    -- Load Projectile Manager
+    ProjectileManager.Init()
     setProgress(1)
     print("Modules loaded")
 end
@@ -51,7 +59,7 @@ ClientLoader.Init = function()
 	if Game.Assets then
 		preload()
 	end
-    loadModules()
+    load()
 end
 
 return ClientLoader

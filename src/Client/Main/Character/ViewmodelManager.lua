@@ -25,7 +25,7 @@ local TypeEntity = require(ReplicatedStorage.Types.TypeEntity)
 local VISIBLE_LIMBS = { Game.Limbs.RightArm, Game.Limbs.LeftArm }
 local VIEWMODEL_WHITELIST = { Game.Limbs.Torso, Game.Limbs.RightArm, Game.Limbs.LeftArm, Game.Limbs.RightLeg, "HumanoidRootPart", "Meshes" }
 local CAMERA = Workspace.CurrentCamera
-local VIEWMODEL_SCALE = 0.5
+local VIEWMODEL_SCALE = 1
 
 -- Helper functions
 local function scaleCFrame(cframe: CFrame, scale: number)
@@ -82,10 +82,18 @@ function ViewmodelManager:setupToolEvents()
         self:createFakeTool(tool)
     end)
 
-    self.backpack.events.ToolRemoved:Connect(function(tool)
-        for i, fakeTool in self.fakeTools do
-            destroyFakeTool(fakeTool)
-            table.remove(self.fakeTools, i)
+    self.backpack.events.ToolRemoved:Connect(function(index)
+        print(index)
+        local tool = self.backpack:getToolFromIndex(index)
+
+        if not tool then return end -- TODO may cause ambiguous behaivor
+
+        local ID = tool:GetAttribute("ID")
+        for otherID, fakeTool in self.fakeTools do
+            if otherID == ID then
+                destroyFakeTool(fakeTool)
+                table.remove(self.fakeTools, ID)
+            end
         end
     end)
 
@@ -147,6 +155,7 @@ function ViewmodelManager:processRigParts()
     for _, child in self.rig:GetChildren() do
         if child:IsA("BasePart") then
             self:configurePartVisibility(child)
+			child.Transparency = 0.1	
             child.CanCollide = false
             child.CastShadow = false
         elseif not table.find(VIEWMODEL_WHITELIST, child.Name) then
@@ -165,7 +174,6 @@ function ViewmodelManager:adjustShoulderMotors()
 end
 
 function ViewmodelManager:setupRigSync()
-    local trove = Trove.new()
     self.trove:Connect(RunService.RenderStepped, function(deltaTime)
         self:updateRigPosition()
         self:syncMotors()
@@ -175,7 +183,7 @@ end
 function ViewmodelManager:updateRigPosition()
     if not self.rig then return end
     local cameraCFrame = CAMERA.CFrame
-    local origin = cameraCFrame + cameraCFrame.LookVector/2 - cameraCFrame.UpVector
+    local origin = cameraCFrame + (cameraCFrame.LookVector/2) - (cameraCFrame.UpVector * VIEWMODEL_SCALE)
     self.rig:PivotTo(origin)
 end
 
@@ -184,6 +192,7 @@ function ViewmodelManager:syncMotors()
         RightShoulder = self.rig.Torso["Right Shoulder"],
         LeftShoulder = self.rig.Torso["Left Shoulder"],
         RootJoint = self.rig.HumanoidRootPart.RootJoint,
+        Handle = self.rig:FindFirstChild("Handle") , -- May be nil and that's ok
     }
 
     local character = self.entity.rig
@@ -191,6 +200,7 @@ function ViewmodelManager:syncMotors()
         RightShoulder = character.Torso["Right Shoulder"],
         LeftShoulder = character.Torso["Left Shoulder"],
         RootJoint = character.HumanoidRootPart.RootJoint,
+        Handle = character:FindFirstChild("Handle")
     }
 
     for name, rigMotor in rigMotors do
@@ -216,9 +226,10 @@ function ViewmodelManager:createFakeTool(tool)
 end
 
 function ViewmodelManager:getToolComponents(asset)
-    local model = asset:FindFirstChild("Tool"):FindFirstChild("Model")
+    local rig = asset:FindFirstChild("Rig")
+    local model = rig:FindFirstChildOfClass("Tool"):FindFirstChild("Model")
     local handle = model and model:FindFirstChild("Handle")
-    local motor = asset:FindFirstChildOfClass("Motor6D")
+    local motor = rig:FindFirstChildOfClass("Motor6D")
     
     if not (model and handle and motor) then
         warn("Tool asset missing components")
@@ -240,8 +251,9 @@ function ViewmodelManager:createFakeToolComponents(tool, components)
     if not correspondingLimb then return end
     
     local clonedMotor = self:cloneMotor(components.motor, correspondingLimb, clonedModel.Handle)
+ 
     clonedModel.Parent = folder
-    
+
     -- Add hide and show functions to the fakeTool
     local fakeTool = {
         model = clonedModel,
@@ -251,10 +263,12 @@ function ViewmodelManager:createFakeToolComponents(tool, components)
         destroy = function(self) destroyFakeTool(self) end,
         hide = function(self)
             self.model.Parent = nil -- Hide the model by setting parent to nil
+            clonedMotor.Parent = nil
         end,
         show = function(self)
             if self.folder and self.folder:IsDescendantOf(game) then -- Ensure folder is valid
                 self.model.Parent = self.folder
+                clonedMotor.Parent = self.folder.Parent
             else
                 warn("Cannot show fake tool: folder is invalid or destroyed.")
             end

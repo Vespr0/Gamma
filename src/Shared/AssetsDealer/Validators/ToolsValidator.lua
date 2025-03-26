@@ -2,19 +2,23 @@
 local function validateToolRig(asset)
 	local rig = asset:FindFirstChild("Rig")
 	
-	if not rig then warn(`Tool "{asset.Name}" has no rig.`) return end
+	assert(rig, `Tool asset: "{asset.Name}" has no rig`)
 	
 	local rootPart = rig:FindFirstChild("HumanoidRootPart") or rig.PrimaryPart
-	if not rootPart then warn(`Tool "{asset.Name}"'s rig has no root part.`) end 
+	assert(rootPart, `Tool asset: "{asset.Name}" has no root part`)
 	
 	local isAnchored = rootPart.Anchored
 	
 	-- Check if the rig root part is anchored
-	if not isAnchored then warn(`Tool {asset.Name}" has it's rig's root part unanchored, it has now been anchored. Anchor it in studio to remove this warning.`) end
+	assert(isAnchored, `Tool asset: "{asset.Name}"'s root part is not anchored.`)
 	rootPart.Anchored = true
 
 	-- Check if any parts have collisions on
-	local model = asset:FindFirstChild("Tool"):FindFirstChild("Model")
+	local tool = rig:FindFirstChildOfClass("Tool")
+
+	assert(tool, "Tool asset has no tool")
+
+	local model = tool:FindFirstChild("Model")
 	for i, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
 			if part.CanCollide then

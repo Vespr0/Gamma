@@ -19,9 +19,9 @@ local function setupModules()
     end
 end
 
-function Inputs.IsValidKey(validKeys: {Enum.KeyCode},key: Enum.KeyCode)
-	for _,validKey in validKeys do
-        if validKey == key then
+function Inputs.IsValidInput(validInputs: {Enum.KeyCode | Enum.UserInputType},input: InputObject)
+	for _,validInput in validInputs do
+        if validInput == input.KeyCode or validInput == input.UserInputType then
             return true
         end
     end

@@ -65,21 +65,21 @@ local function initiliazeModules()
     end
 end
 
-local function setupIris()
-	local Iris = require(game:GetService("ReplicatedStorage").Packages.iris).Init()
-	Iris:Connect(function()
-		Iris.Window({"My First Window!"})
-			Iris.Text({"Hello, World"})
-			Iris.Button({"Save"})
-			Iris.InputNum({"Input"})
-		Iris.End()
-	end)
-end
+-- local function setupIris()
+-- 	local Iris = require(game:GetService("ReplicatedStorage").Packages.iris).Init()
+-- 	Iris:Connect(function()
+-- 		Iris.Window({"My First Window!"})
+-- 			Iris.Text({"Hello, World"})
+-- 			Iris.Button({"Save"})
+-- 			Iris.InputNum({"Input"})
+-- 		Iris.End()
+-- 	end)
+-- end
 
 local function setup()
     disableCoreUi()
     initiliazeModules()
-	setupIris()
+	-- setupIris()
 end
 
 function Ui.GetUtility(characterDependant: boolean)

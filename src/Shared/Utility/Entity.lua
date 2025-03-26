@@ -2,7 +2,8 @@ local Entity = {}
 
 -- TODO: Typechecking
 
--- TODO: this is actually rig utility not entity utility
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Game = require(ReplicatedStorage.Utility.Game)
 
 -- Healthy means with a humanoid and health above 0
 function Entity.IsHealthy(rig)
@@ -20,11 +21,31 @@ function Entity.IsAlive(rig)
 	return true
 end
 
+function Entity.GetEntityFromEntityID(entityID: number)
+	for _,entity in Game.Folders.Entities:GetChildren() do
+		if entity:GetAttribute("ID") == entityID then
+			return entity
+		end
+	end
+
+	return nil
+end
+
 function Entity.GetPlayerFromEntityID(entityID: number)
 	for _,player in game:GetService("Players"):GetPlayers() do
 		if tonumber(player:GetAttribute("EntityID")) == entityID then
 			return player
 		end
+	end
+
+	return nil
+end
+
+function Entity.GetEntityIDFromPlayer(player)
+	local character = player.Character
+
+	if character then
+		return character:GetAttribute("ID")
 	end
 
 	return nil

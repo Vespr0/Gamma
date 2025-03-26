@@ -15,6 +15,7 @@ export type BaseEntity = {
     displayName: string,
     description: string,
     rig: Model,
+    root: BasePart,
     player: Player
 }
 

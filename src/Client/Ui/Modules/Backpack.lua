@@ -41,7 +41,7 @@ function Backpack.InitUi(ui)
         return HotbarFrame:FindFirstChild("Slot"..index)
     end
 
-	local function removeSlot(_,index)
+	local function removeSlot(index)
 		assert(index, `Index must not be nil.`)
 		
         local slot = getSlot(index)

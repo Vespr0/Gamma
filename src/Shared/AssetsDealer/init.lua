@@ -1,4 +1,3 @@
---!strict
 local AssetsDealer = {}
 
 export type assetsGetMode = "Clone" | "Require" | nil
@@ -112,7 +111,7 @@ function AssetsDealer.GetDir(category: string, directory: string, mode: assetsGe
     return asset
 end
 
-function AssetsDealer.Get(category: string,name: string,mode: assetsGetMode)
+function AssetsDealer.Get(category: string,name: string,mode: assetsGetMode) 
 	local categoryFolder = AssetsDealer.Assets:FindFirstChild(category)
 	if not categoryFolder then
 		warn("No category",category)
@@ -144,7 +143,7 @@ function AssetsDealer.Get(category: string,name: string,mode: assetsGetMode)
 			AssetsDealer.Bakery[category][name] = y
 			
 			assert(y,`Couldn't find asset of category "{category}" with name "{name}"`)
-			return y
+			return y :: any
 		end
 	end
 

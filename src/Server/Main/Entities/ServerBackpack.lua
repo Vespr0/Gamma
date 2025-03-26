@@ -14,6 +14,7 @@ ServerBackpack.Instances = {}
 local BackpackMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Backpack")
 local ToolUtility = require(ReplicatedStorage.Utility.ToolUtility)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
+local ServerAbilities = require(script.Parent.ServerAbilities)
 
 ServerBackpack.ItemID = 0
 
@@ -34,7 +35,8 @@ function ServerBackpack.new(entity: TypeEntity.ServerEntity)
     
     ServerBackpack.Instances[entity.id] = self
 
-    warn(entity.id,self.player)
+    -- Setup abilities
+    ServerAbilities.new(self)
 
     return self
 end
@@ -69,9 +71,8 @@ function ServerBackpack:setup()
     end
 
     local function debugItems()
-        warn("Debugging Items")
-        self:addTool(ToolUtility.GetFromName("Brick", true))
-        self:addTool(ToolUtility.GetFromName("Brick", true))    
+        self:addTool(ToolUtility.GetFromName("Minigun", true)) 
+        self:addTool(ToolUtility.GetFromName("Sword", true))   
     end
 
     debugItems()
@@ -141,27 +142,19 @@ function ServerBackpack:addTool(tool: Tool)
     
     -- Put the tool in the backpack
     tool.Parent = self.tools
-    warn(tool:GetFullName())
 
     ServerBackpack.ItemID += 1
     tool:SetAttribute("ID", ServerBackpack.ItemID)
     tool:SetAttribute("Owner", self.entity.id)
 end
 
-function ServerBackpack:removeTool(param: Tool | number)
-    if typeof(param) == "number" then
-        local index = param
-        local tool = self:getToolFromIndex(index)
-        if tool then
-            BackpackMiddleware.SendToolRemoved:Fire(self.entity.id,index)
-            tool:Destroy()
-        end
-    else
-        -- Tool
-        local index = param:GetAttribute("Index")
-        BackpackMiddleware.SendToolRemoved:Fire(self.entity.id,index)
-        param:Destroy()
+function ServerBackpack:removeTool(tool: Tool)
+    local index = tool:GetAttribute("Index")
+    if tool:GetAttribute("Equipped") then
+        self:unequipTool()
     end
+    BackpackMiddleware.SendToolRemoved:Fire(self.entity.id,index)
+    tool:Destroy()
 end
 
 function ServerBackpack:removeAllTools()

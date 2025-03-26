@@ -7,10 +7,22 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TypeRig = require(script.Parent.TypeRig)
 local Signal = require(ReplicatedStorage.Packages.signal)
 
+export type AbilityInputs = {
+    [Enum.KeyCode | Enum.UserInputType]: boolean -- TODO may be wrong idk
+}
 
 export type AbilityConfig = {
-    displayName: string,
-    keybinds: { Enum.KeyCode }, -- Array of keycodes
+    name: string,
+    cooldownDuration: number,
+    inputs: { AbilityInputs }, -- Array of keycodes
+}
+
+export type BaseClientAbility = {
+
+}
+
+export type BaseServerAbility = {
+
 }
 
 export type BaseAbility = {
@@ -22,10 +34,10 @@ export type BaseAbility = {
     height: number,
     moving: boolean,
     events: {
-        Removed: Signal<nil>,
-        Added: Signal<BaseAnima>,
-        CharacterAdded: Signal<TypeRig.Rig>,
-        EntityDied: Signal<nil>
+        Removed: any,
+        Added: any,
+        CharacterAdded: any,
+        EntityDied: any
     }
 }
 

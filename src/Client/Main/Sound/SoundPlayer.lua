@@ -15,7 +15,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local activeSounds = {}
 
 -- Function to play a sound
-function SoundPlayer.PlaySound(directory: string, volume: number, looped: boolean)
+function SoundPlayer.PlaySound(directory: string, volume: number?, looped: boolean?)
 	-- Fetch the sound instance using AssetsDealer
 	local sound = AssetsDealer.GetDir("Sounds", directory, "Clone")
 

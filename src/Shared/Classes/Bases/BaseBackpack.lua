@@ -22,7 +22,6 @@ function BaseBackpack.new(entity: TypeEntity.BaseEntity)
     --if not PlayerUtility.IsValidPlayerValue(entity) then error(`Entity is not a Player"`) return end -- no longer a player
 
     if IS_SERVER then
-        warn("uhm what the sigma")
         self.tools = Instance.new("Folder")
         self.tools.Name = tostring(entity.id)
         self.tools.Parent = ReplicatedStorage.ToolsDeposit -- Place under the entity's rig

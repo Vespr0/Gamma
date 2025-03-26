@@ -28,7 +28,7 @@ end
 
 function ToolUtility.GetFromName(toolName: string,clone: boolean)
     local asset = ToolUtility.GetAsset(toolName)
-    local tool = asset:FindFirstChildOfClass("Tool")
+    local tool = asset:FindFirstChild("Rig"):FindFirstChildOfClass("Tool")
 
     if tool then
         if clone then
@@ -42,18 +42,5 @@ function ToolUtility.GetFromName(toolName: string,clone: boolean)
     end
 end
 
-function ToolUtility.GetToolConfig(tool: Tool)
-    -- Check if the tool is nil or destroyed
-    if not tool or not tool:IsA("Tool") or not tool.Parent then
-        return nil
-    end
-    local config
-    if tool and tool:FindFirstChild("Config") then
-        config = require(tool:FindFirstChild("Config"))
-    else
-        config = {}
-    end
-    return config
-end
 
 return ToolUtility

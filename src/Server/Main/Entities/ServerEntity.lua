@@ -11,7 +11,7 @@ ServerEntity.__index = ServerEntity
 local Signal = require(ReplicatedStorage.Packages.signal)
 local Game = require(ReplicatedStorage.Utility.Game)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
-local ServerBackpack = require(script.Parent.Parent.Player.ServerBackpack)
+local ServerBackpack = require(script.Parent.ServerBackpack)
 
 -- Variables
 ServerEntity.Instances = {}
@@ -39,9 +39,7 @@ function ServerEntity:setup()
 	self.rig.Parent = Game.Folders.Entities
 	
 	self:setupHumanoid()
-
-	CollectionService:AddTag(self.rig,Game.Tags.Entity)	
-
+	-- self:setupPhysicsController()
 	self:setupBackpack()
 
 	self.events.Died:Connect(function()
@@ -49,6 +47,7 @@ function ServerEntity:setup()
 	end)
 
 	ServerEntity.Instances[self.id] = self
+	CollectionService:AddTag(self.rig,Game.Tags.Entity)	
 	ServerEntity.GlobalAdded:Fire(self)
 end
 
@@ -56,6 +55,41 @@ function ServerEntity.Get(id: number|string)
 	return ServerEntity.Instances[tostring(id)]
 end
 
+-- function ServerEntity:setupPhysicsController()
+-- 	self.humanoid.EvaluateStateMachine = false -- Disable Humanoid state machine and physics
+	
+-- 	local cm = Instance.new("ControllerManager")
+-- 	local gc = Instance.new("GroundController", cm)
+-- 	Instance.new("AirController", cm)
+-- 	Instance.new("ClimbController", cm)
+-- 	Instance.new("SwimController", cm)
+
+-- 	cm.RootPart = self.root
+-- 	gc.GroundOffset = self.humanoid.HipHeight
+-- 	cm.FacingDirection = cm.RootPart.CFrame.LookVector
+
+-- 	local floorSensor = Instance.new("ControllerPartSensor")
+-- 	floorSensor.SensorMode = Enum.SensorMode.Floor
+-- 	floorSensor.SearchDistance = self.humanoid.HipHeight + 2.0 -- Increased buffer for ground detection
+-- 	floorSensor.Name = "GroundSensor"
+
+-- 	local ladderSensor = Instance.new("ControllerPartSensor")
+-- 	ladderSensor.SensorMode = Enum.SensorMode.Ladder
+-- 	ladderSensor.SearchDistance = 1.5
+-- 	ladderSensor.Name = "ClimbSensor"
+
+-- 	local waterSensor = Instance.new("BuoyancySensor")
+
+-- 	cm.GroundSensor = floorSensor
+-- 	cm.ClimbSensor = ladderSensor
+
+-- 	waterSensor.Parent = cm.RootPart
+-- 	floorSensor.Parent = cm.RootPart
+-- 	ladderSensor.Parent = cm.RootPart
+
+-- 	cm.Parent = self.rig
+-- end
+	
 function ServerEntity:setupHumanoid()
 	self.humanoid.BreakJointsOnDeath = false
 	-- Humanoid should use jump height

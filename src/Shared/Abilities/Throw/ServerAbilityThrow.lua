@@ -1,40 +1,36 @@
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local BaseAbility = require(ReplicatedStorage.Classes.Bases.BaseAbility)
-
+local BaseAbility = require(ReplicatedStorage.Abilities.BaseAbility)
+-- Types
+local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
+-- Class
 local ServerAbilityThrow = setmetatable({}, {__index = BaseAbility})
 ServerAbilityThrow.__index = ServerAbilityThrow
-
--- Variables
-local singleton = nil
 -- Constants
 local ABILITY_NAME = "Throw"
 
--- function ServerAbilityThrow.new(entity,tool,config)
--- 	local self = setmetatable(BaseAbility.new(entity,tool,ABILITY_NAME,config), ServerAbilityThrow)
+function ServerAbilityThrow.new(entity,tool,config)
+	local self = setmetatable(BaseAbility.new(ABILITY_NAME,entity,tool,config) :: TypeAbility.BaseAbility, ServerAbilityThrow)
 
--- 	self:setup()
-
--- 	-- Events
--- 	warn(item)
+	self:setup()
 	
--- 	return self
--- end
+	return self
+end
 
--- function ServerAbilityThrow:setup()
--- 	self:readAction(function(player: Player,chargeDuration: number)
--- 		print(`My man {player.DisplayName} used throw.`)
--- 	end)
--- end
+function ServerAbilityThrow:setup()
+	self:readAction(function()
+		if self:isHot() then return end
+		self:heat()
+		print(`My man {self.entity.rig.Name} used throw.`)
+	
+		self.entity.backpack:removeTool(self.tool)
+	end)
+end
 
--- function ServerAbilityThrow:destroy()
--- 	self:destroyBase()
--- 	table.clear(self)
--- end
-
--- function ServerAbilityThrow.Init()
--- 	singleton = ServerAbilityThrow.new()
--- end
+function ServerAbilityThrow:destroy()
+	self:destroyBase()
+	table.clear(self)
+end
 
 return ServerAbilityThrow
