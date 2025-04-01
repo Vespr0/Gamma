@@ -73,10 +73,6 @@ function BaseAbility:readAction(func)
 	end))
 end
 
-function BaseAbility:getFakeTool()
-	return self.tool
-end
-
 function BaseAbility:sendAction(...)
 	return AbilitiesMiddleware.SendAbility:Fire(self.name,self.tool:GetAttribute("Index"),...)
 end

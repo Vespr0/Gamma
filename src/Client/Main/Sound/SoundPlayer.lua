@@ -5,6 +5,7 @@ local SoundPlayer = {}
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 -- Modules
 local AssetsDealer = require(ReplicatedStorage:WaitForChild("AssetsDealer"))
@@ -15,7 +16,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local activeSounds = {}
 
 -- Function to play a sound
-function SoundPlayer.PlaySound(directory: string, volume: number?, looped: boolean?)
+function SoundPlayer.PlaySound(directory: string, volume: number?, looped: boolean?,fadeInTime: number?)
 	-- Fetch the sound instance using AssetsDealer
 	local sound = AssetsDealer.GetDir("Sounds", directory, "Clone")
 
@@ -25,13 +26,22 @@ function SoundPlayer.PlaySound(directory: string, volume: number?, looped: boole
 	end
 
 	-- Set sound properties
-	sound.Volume = volume or 1
+	sound.Volume = fadeInTime and 0 or (volume or 1)
 	sound.Looped = looped or false
 	sound.Parent = playerGui
 
 	-- Play the sound
 	sound:Play()
 
+	-- Tween
+	if fadeInTime then
+		local Tween = TweenService:Create(
+			sound,
+			TweenInfo.new(fadeInTime),
+			{Volume = volume or 1}
+		)
+		Tween:Play()
+	end
 	-- Store active sound for later management
 	table.insert(activeSounds, sound)
 
@@ -41,6 +51,20 @@ function SoundPlayer.PlaySound(directory: string, volume: number?, looped: boole
 			SoundPlayer.StopSound(sound)
 		end)
 	end
+
+	-- TODO: Possible memory leak here
+	-- sound.Stopping:Connect(function()
+	-- 	sound:Destroy()
+	-- end)
+
+	return sound
+end
+
+function SoundPlayer.FadeOut(sound, fadeOutTime: number)
+	local tween = TweenService:Create(sound, TweenInfo.new(fadeOutTime), {Volume = 0})
+	tween:Play()
+	tween.Completed:Wait()
+	sound:Stop()
 end
 
 -- Function to stop a sound

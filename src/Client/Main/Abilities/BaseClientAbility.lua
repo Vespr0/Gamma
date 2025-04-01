@@ -11,6 +11,7 @@ BaseClientAbility.__index = BaseClientAbility
 local Signal = require(ReplicatedStorage.Packages.signal)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local TypeEntity = require(ReplicatedStorage.Types.TypeEntity)
+local ViewmodelManager = require(script.Parent.Parent.Character.ViewmodelManager)
 -- Network
 local AbilitiesMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Abilities")
 -- Constants
@@ -35,9 +36,8 @@ function BaseClientAbility:checkInputConditions()
 	return true
 end
 
-function BaseClientAbility:loadAnimation(name: string,animation: string)
-	warn(self.animationPreamble)
-	self.entity.animator:load(self.animationPreamble, name, animation)
+function BaseClientAbility:loadAnimation(name: string,animationDirectory: string)
+	return self.entity.animator:load(self.animationPreamble, name, animationDirectory)
 end
 
 function BaseClientAbility:playAnimation(name: string, fadeTime: number, weight: number, speed: number)
@@ -46,6 +46,18 @@ end
 
 function BaseClientAbility:stopAnimation(name: string, fadeTime: number)
 	self.entity.animator:stop(self.animationPreamble, name, fadeTime)
+end
+
+function BaseClientAbility:getViewmodelTool()
+	return ViewmodelManager.Singleton.currentFakeTool
+end
+
+function BaseClientAbility:getFireEndPosition()
+	local viewmodelTool = self:getViewmodelTool()
+	assert(viewmodelTool, "Viewmodel tool is missing")
+	local fireEnd = viewmodelTool.model:FindFirstChild("Handle"):FindFirstChild("FireEnd")
+	assert(fireEnd, "FireEnd attachment is missing")
+	return fireEnd.WorldPosition
 end
 
 function BaseClientAbility:setup()
@@ -65,11 +77,10 @@ function BaseClientAbility:setup()
 		assert(self.toolConfig.animations.hold, `Hold animation is missing from tool "{self.tool.Name}".`)
 		self:loadAnimation("Hold",self.toolConfig.animations.hold)
 		self.events.Equipped:Connect(function()
-			print(self.animationPreamble)
-			self:playAnimation("Hold")
+			self:playAnimation("Hold",0)
 		end)
 		self.events.Unequipped:Connect(function()
-			self:stopAnimation("Hold")
+			self:stopAnimation("Hold",0)
 		end)
 	end)
 end

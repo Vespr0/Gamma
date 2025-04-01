@@ -91,9 +91,9 @@ function Animator:load(folderName:string, actionName:string, assetDirectory:stri
 		warn(`Couldn't find animation with directory: "{assetDirectory}"`)
 		return
 	end
-
+	
 	if not self.loaded[folderName] then self.loaded[folderName] = {} end
-	warn("Load",folderName,actionName)
+
 	self.loaded[folderName][actionName] = self.animator:LoadAnimation(animation)
 end
 
@@ -102,7 +102,6 @@ function Animator:play(folderName:string, actionName:string, fadeTime:number, we
 		warn(`No loaded animation to play with folder name: "{folderName}" and action name: "{actionName}".`)
 		return
 	end
-	warn(self.animator:GetPlayingAnimationTracks())
 	self.loaded[folderName][actionName]:Play(fadeTime, weight, speed)
 end
 

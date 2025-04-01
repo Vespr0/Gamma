@@ -10,8 +10,10 @@ local Remotes = ReplicatedStorage.Remotes
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 
+
 --local ServerModules 
 local ExplosionModule 
+local GRAVITY_FACTOR = 1
 
 local IsServer = RunService:IsServer()
 if IsServer then
@@ -50,58 +52,6 @@ local function TweenPosition(Part,Time,Value)
 	end)
 end 
 
--- function ProjectileManager.Generic(Origin:Vector3,Direction:Vector3,Character:Instance,Color:Color3,Thickness:number)
--- 	Color = Color or Color3.fromRGB(255, 214, 66)
--- 	Thickness = Thickness or .1
-
--- 	local RayInfo = RaycastParams.new()
--- 	RayInfo.FilterType = Enum.RaycastFilterType.Exclude
--- 	RayInfo.FilterDescendantsInstances = {Character,workspace.Nodes}
-
--- 	local ProjectileRay = workspace:Raycast(Origin,Direction,RayInfo)
-
--- 	local function CastProjectile(hit)
--- 		local XDirection
--- 		if hit then
--- 			XDirection = Direction.Unit*((Origin-ProjectileRay.Position).magnitude)
--- 		else
--- 			XDirection = Direction
--- 		end
--- 		local CenterPoint = Origin + XDirection/2
--- 		local beam = Instance.new("Part",workspace.Nodes.FX)
--- 		beam.Anchored = true
--- 		beam.CanCollide = false
--- 		beam.Color = Color
--- 		beam.Transparency = .5
-
--- 		beam.CFrame = CFrame.new(CenterPoint,Origin)
--- 		beam.Size = Vector3.new(Thickness,Thickness,XDirection.magnitude)
--- 		TweenProjectile(beam,Vector3.new(beam.Size.X/4,beam.Size.Y/4,beam.Size.Z),.2)
--- 		Debris:AddItem(beam,.1)
--- 	end
-
--- 	if ProjectileRay then
--- 		CastProjectile(true)
--- 		local instance = ProjectileRay.Instance
--- 		if instance then
--- 			local Model = instance.Parent
--- 			if not Model:FindFirstChild("Team") then
--- 				return
--- 			end
--- 			for _,Entity in pairs(workspace.Entities:GetChildren()) do
--- 				if Entity:FindFirstChild("Humanoid") and Entity:FindFirstChild("Team") then
--- 					if instance:IsDescendantOf(Entity) then
--- 						return {[1]=instance,[2]=Entity,[3]=ProjectileRay.Position}
--- 					end					
--- 				end
--- 			end
--- 			return {[1]=ProjectileRay.Position,[2]=instance,[3]=ProjectileRay.Normal}
--- 		end
--- 	else
--- 		CastProjectile(false)
--- 	end
--- end
-
 function ProjectileManager.Dynamic(args--[[,toolArgs]])
 
 	--[[ 
@@ -126,13 +76,14 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 	-- 	args["ClientStepEvent"] = rawToolArgs["ClientProjectileStepEvent"]
 	-- 	args["ClientBounceEvent"] = rawToolArgs["ClientProjectileBounceEvent"]
 	-- end
-	args["Amplitude"] = args["Amplitude"] or 20
-	args["Gravity"] = args["Gravity"] or 0.1
+	args["Amplitude"] = args["Amplitude"] or 40
 	args["Bounces"] = args["Bounces"] or 0
 	args["Range"] = args["Range"] or 1000
 	args["Speed"] = args["Speed"] or 200
 	args["Thickness"] = args["Thickness"] or 0.1
-	local bounces = args["Bounces"]
+	local gravity = args.Amplitude / args.Speed * GRAVITY_FACTOR
+	local stepTime = args.Amplitude / args.Speed
+	local bounces = args.Bounces
 
 	-- Client replication.
 	if IsServer then
@@ -147,29 +98,26 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 		end	
 	end
 
-	local stepTime = args["Amplitude"]/args["Speed"]
-	-- local stepFinished = false
-
 	local projectile 
 	local debugbeam
 
-	local CurrentPosition = args["StartingPosition"] 
+	local CurrentPosition = args["Origin"] 
 	local CurrentDirection = (args["Direction"].Unit)*args["Amplitude"]
 
 	-- Projectile visuals setup
 	if not IsServer then
-		if args["CustomMesh"] then
-			-- projectile = AssetsDealer.GetMesh(args["CustomMesh"])
+		if args.CustomProjectile then
+			projectile = AssetsDealer.GetDir("Meshes",args.CustomProjectile,"Clone")
 		else
 			projectile = Instance.new("Part")
-			projectile.Color = args["Color"] or Color3.fromRGB(255, 245, 96)
+			projectile.Color = args.Color or Color3.fromRGB(255, 245, 96)
 			projectile.Transparency = 1
 			projectile.Material = Enum.Material.Neon
 			projectile.Size = Vector3.new(args["Thickness"],args["Thickness"],CurrentDirection.Magnitude)
 			local TransparencyTween = TweenService:Create(projectile,TweenInfo.new(3),{Transparency = .5})
 			TransparencyTween:Play()
 		end
-		projectile.Parent = Game.Folders.Debug
+		projectile.Parent = Game.Folders.Projectiles
 		projectile.Anchored = true
 		projectile.CanCollide = false
 		projectile.CFrame = CFrame.lookAt(CurrentPosition,CurrentPosition+CurrentDirection)
@@ -180,7 +128,7 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 		-- 	particle.Rate = 30
 		-- end
 	else
-		projectile = Instance.new("Part"); projectile.Parent = Game.Folders.Debug
+		projectile = Instance.new("Part"); projectile.Parent = Game.Folders.Projectiles
 		projectile.Anchored = true
 		projectile.CanCollide = false
 		projectile.Transparency = .5
@@ -193,7 +141,9 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 	local function Step()
 		local RayInfo = RaycastParams.new()
 		RayInfo.FilterType = Enum.RaycastFilterType.Exclude
-		RayInfo.FilterDescendantsInstances = args["RaycastBlacklist"] or {workspace.Nodes}
+		args.RaycastBlacklist = args.RaycastBlacklist or {}
+		table.insert(args.RaycastBlacklist,workspace.Nodes)
+		RayInfo.FilterDescendantsInstances = args.RaycastBlacklist
 		RayInfo.IgnoreWater = true
 		--local CenterPoint = CurrentPosition + CurrentDirection/2
 
@@ -226,12 +176,12 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 			if IsServer then
 				local instance = Raycast.Instance
 				if instance then
-					local isGlass = instance.Material == Enum.Material.Ice and instance.Transparency > 0
-					if isGlass then
-						Remotes.FX:FireAllClients("GlassShatter",{Position = Raycast.Position,Instance = instance})
-						instance.Transparency = 1
-						instance.CanCollide = false
-					end
+					-- local isGlass = instance.Material == Enum.Material.Ice and instance.Transparency > 0
+					-- if isGlass then
+					-- 	Remotes.FX:FireAllClients("GlassShatter",{Position = Raycast.Position,Instance = instance})
+					-- 	instance.Transparency = 1
+					-- 	instance.CanCollide = false
+					-- end
 					-- local model = instance.Parent
 					-- local humanoid = model:FindFirstChild("Humanoid")
 					for _,Entity in pairs(workspace.Entities:GetChildren()) do
@@ -268,14 +218,15 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 				if bounces > 0 then
 					bounce()
 				else
-					return {["Position"]=Raycast.Position,["Normal"]=Raycast.Normal}
+				
+					return {["Position"]=Raycast.Position,["Instance"] = Raycast.Instance,["Normal"]=Raycast.Normal}
 				end
 			end
 		end	
 
 		--if not bounced then
 		CurrentPosition += CurrentDirection--*CFrame.lookAt(CurrentPosition,TargetRoot.Position).LookVector
-		CurrentDirection -= Vector3.new(0,args["Gravity"],0)
+		CurrentDirection -= Vector3.new(0,gravity,0)
 		--end
 
 		if not IsServer then
@@ -295,14 +246,16 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 	for i = 1,args["Range"]/args["Amplitude"] do
 		local func = Step()
 		if func then
-			CurrentDirection -= Vector3.new(0,args["Gravity"],0)
+			CurrentDirection -= Vector3.new(0,gravity,0)
 			CurrentPosition += CurrentDirection
 			if not IsServer then
 				local FinalStepLenght = args["Amplitude"]/2
 				local FinalStepTime = stepTime*(FinalStepLenght/args["Amplitude"])				
 				local Cframe = CFrame.lookAt(CurrentPosition,CurrentPosition+(CurrentDirection*FinalStepLenght))
 				TweenCFrame(projectile,FinalStepTime,Cframe)
-				projectile.Size = Vector3.new(args["Thickness"],args["Thickness"],FinalStepLenght)
+				if not args.CustomProjectile then
+					projectile.Size = Vector3.new(args["Thickness"],args["Thickness"],FinalStepLenght)
+				end
 				task.wait(FinalStepTime)
 				projectile:Destroy()					
 			end

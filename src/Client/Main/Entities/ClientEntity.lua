@@ -15,6 +15,7 @@ local TypeRig = require(ReplicatedStorage.Types.TypeRig)
 local Motor6DManager = require(script.Parent.Motor6DManager)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local ClientBackpack = require(script.Parent.Parent.Player.ClientBackpack)
+local ClientMovement = require(script.Parent.Parent.Character.ClientMovement)
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 ClientEntity.Instances = {}
@@ -52,10 +53,15 @@ function ClientEntity:setup()
 	self.Motor6DManager = Motor6DManager.new(self.rig)
 
 	self:setupBackpack()
+	self:setupMovement()
 
 	self.events.Died:Connect(function()
 		self:destroy()
 	end)
+end
+
+function ClientEntity:setupMovement()
+	self.movement = ClientMovement.new(self)
 end
 
 function ClientEntity:setupAnimations()

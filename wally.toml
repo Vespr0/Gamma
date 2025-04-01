@@ -8,9 +8,16 @@ realm = "shared"
 signal = "sleitnick/signal@^1"
 TableUtil = "sleitnick/table-util@^1"
 fusion = "mattschrubb/fusion@1.2.5"
-rblx-nonvoxel-greedy-meshing = "royal0959/rblx-nonvoxel-greedy-meshing@1.0.3"
 trove = "cody-nelson/trove@0.0.1"
-iris = "xswezan/iris@2.0.5"
+
+# Dev
+# iris = "xswezan/iris@2.0.5"
 conch = "alicesaidhi/conch@0.2.3"
 conch_ui = "alicesaidhi/conch-ui@0.2.3"
+
+# Melee
 raycasthitbox = "ulferno/raycasthitbox@4.0.2"
+
+# Voxel destruction
+greedymeshing = "royal0959/rblx-nonvoxel-greedy-meshing@1.0.3"
+partcache = "andremhpra/partcache@1.0.0"

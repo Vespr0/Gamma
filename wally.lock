@@ -40,7 +40,12 @@ dependencies = [["types", "alicesaidhi/conch-types@0.2.0"]]
 [[package]]
 name = "andrea/repo"
 version = "0.1.0"
-dependencies = [["TableUtil", "sleitnick/table-util@1.2.1"], ["conch", "alicesaidhi/conch@0.2.3"], ["conch_ui", "alicesaidhi/conch-ui@0.2.3"], ["fusion", "mattschrubb/fusion@1.2.5"], ["iris", "xswezan/iris@2.0.5"], ["raycasthitbox", "ulferno/raycasthitbox@4.0.2"], ["rblx-nonvoxel-greedy-meshing", "royal0959/rblx-nonvoxel-greedy-meshing@1.0.3"], ["signal", "sleitnick/signal@1.5.0"], ["trove", "cody-nelson/trove@0.0.1"]]
+dependencies = [["TableUtil", "sleitnick/table-util@1.2.1"], ["conch", "alicesaidhi/conch@0.2.3"], ["conch_ui", "alicesaidhi/conch-ui@0.2.3"], ["fusion", "mattschrubb/fusion@1.2.5"], ["greedymeshing", "royal0959/rblx-nonvoxel-greedy-meshing@1.0.3"], ["partcache", "andremhpra/partcache@1.0.0"], ["raycasthitbox", "ulferno/raycasthitbox@4.0.2"], ["signal", "sleitnick/signal@1.5.0"], ["trove", "cody-nelson/trove@0.0.1"]]
+
+[[package]]
+name = "andremhpra/partcache"
+version = "1.0.0"
+dependencies = []
 
 [[package]]
 name = "centau/vide"
@@ -80,9 +85,4 @@ dependencies = []
 [[package]]
 name = "ulferno/raycasthitbox"
 version = "4.0.2"
-dependencies = []
-
-[[package]]
-name = "xswezan/iris"
-version = "2.0.5"
 dependencies = []

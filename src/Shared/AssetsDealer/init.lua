@@ -85,29 +85,28 @@ function AssetsDealer.GetDir(category: string, directory: string, mode: assetsGe
     end
 
     -- Baking logic
-    local name = currentFolder.Name
 	if not AssetsDealer.Bakery[category] then
 		AssetsDealer.Bakery[category] = {}
     end
 
-	if AssetsDealer.Bakery[category][name] then
+	if AssetsDealer.Bakery[category][directory] then
         if mode == "Clone" then
-			return AssetsDealer.Bakery[category][name]:Clone()
+			return AssetsDealer.Bakery[category][directory]:Clone()
         end
-		return AssetsDealer.Bakery[category][name]
+		return AssetsDealer.Bakery[category][directory]
     end
 
     local asset = currentFolder
     if mode == "Clone" then
-		AssetsDealer.Bakery[category][name] = asset
+		AssetsDealer.Bakery[category][directory] = asset
         asset = asset:Clone()
     elseif mode == "Require" and asset:IsA("ModuleScript") then
         asset = require(asset)
     end
 
-	AssetsDealer.Bakery[category][name] = asset
+	AssetsDealer.Bakery[category][directory] = asset
 
-    assert(asset, `Couldn't find asset of category "{category}" with name "{name}"`)
+    assert(asset, `Couldn't find asset of category "{category}" with directory "{directory}"`)
     return asset
 end
 

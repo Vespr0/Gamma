@@ -10,23 +10,17 @@ local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local Game = require(ReplicatedStorage.Utility.Game)
 local Lerp = require(ReplicatedStorage.Utility.Lerp)
-local ClientAnima = require(script.Parent.Parent.Player.ClientAnima):get()
 local MovementMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Movement")
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
--- Inputs
 local Inputs = require(script.Parent.Parent.Input.Inputs)
 local SprintingInput = Inputs.GetModule("Sprinting")
 local CrouchingInput = Inputs.GetModule("Crouching")
--- Variables
-local singleton = nil
 
 local SPRINTING_BOOST = 5
 local CROUCHING_PENALTY = 8
 local TRANSITION_SPEED = 3
 
-function Movement.new(entity)
-    if singleton then error("Movement: Singleton already exists.") end
-
+function Movement.new(entity,isLocalPlayerInstance)
     local self = setmetatable({}, Movement)
 
     -- Components
@@ -42,10 +36,9 @@ function Movement.new(entity)
         JumpHeight = 4
     }
     self.currentSpeed = 0
+    self.isLocalPlayerInstance = isLocalPlayerInstance
 
     self:setup()
-
-    singleton = self
 
     return self
 end
@@ -63,30 +56,32 @@ end
 function Movement:setupSprinting()
     self.isSprinting = false
 
-    self.trove:Add(SprintingInput.Event:Connect(function(mode)
-        if self.isCrouching then return end
+    if self.isLocalPlayerInstance then
+        self.trove:Add(SprintingInput.Event:Connect(function(mode)
+            if self.isCrouching then return end
 
-        self.isSprinting = mode
-        self.entity.rig:SetAttribute("Sprinting",mode)
-        --[[ 
-            The sprinting attribute is set by the server to ensure synchronization, however, in the case of the local player
-            we can set it directly to avoid the delay of the server.
-        ]]
-        MovementMiddleware.SendMovementAction:Fire("Sprinting",mode)
-    end))
+            self.isSprinting = mode
+            self.entity.rig:SetAttribute("Sprinting",mode)
+            --[[ 
+                The sprinting attribute is set by the server to ensure synchronization, however, in the case of the local player
+                we can set it directly to avoid the delay of the server.
+            ]]
+            MovementMiddleware.SendMovementAction:Fire("Sprinting",mode)
+        end))
 
-    self.trove:Add(CrouchingInput.Event:Connect(function(mode)
-        if self.isSprinting then return end
-        --[[ 
-            The same condition applies to the croching attribute.
-        ]]
-        self.isCrouching = mode
-        self.entity.rig:SetAttribute("Crouching",mode)
-        -- Add camera offsetr
-        ClientAnima.camera.offsets.Crouching = mode and Vector3.new(0, 0.5, 0) or Vector3.zero
-        -- Set the crouching attribute on the server and consequently on all the other clients
-        MovementMiddleware.SendMovementAction:Fire("Crouching",mode) 
-    end))
+        self.trove:Add(CrouchingInput.Event:Connect(function(mode)
+            if self.isSprinting then return end
+            --[[ 
+                The same condition applies to the croching attribute.
+            ]]
+            self.isCrouching = mode
+            self.entity.rig:SetAttribute("Crouching",mode)
+            -- Add camera offsetr
+            -- ClientAnima.camera.offsets.Crouching = mode and Vector3.new(0, 0.5, 0) or Vector3.zero TODO
+            -- Set the crouching attribute on the server and consequently on all the other clients
+            MovementMiddleware.SendMovementAction:Fire("Crouching",mode) 
+        end))
+    end
 
     self.boosts.WalkSpeed.Sprinting = 0
     self.boosts.WalkSpeed.Crouching = 0
@@ -123,25 +118,6 @@ end
 
 function Movement:destroy()
     self.trove:Destroy()
-    singleton = nil
-end
-
-function Movement.Init()    
-    local function checkSingleton()
-        if singleton then
-            warn("Unexpected behaivor, new ClientMovement instance created without the old one being destroyed.")
-            singleton:destroy()
-        end
-    end
-
-    if ClientAnima.entity then
-        checkSingleton()
-        Movement.new(ClientAnima.entity)
-    end
-    ClientAnima.events.EntityAdded:Connect(function(entity)
-        checkSingleton()
-        Movement.new(entity)
-    end)
 end
 
 return Movement

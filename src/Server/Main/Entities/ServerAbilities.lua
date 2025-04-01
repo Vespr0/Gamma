@@ -35,7 +35,10 @@ function ServerAbilities:setupTool(tool)
     self.abilities = {}
     for _, abilityConfig in config.abilities do
         local abilityName = abilityConfig.name
-        local serverAbility = require(AbiltiesFolder[abilityName]["ServerAbility"..abilityName])
+        local folder = AbiltiesFolder[abilityName]
+        local serverAbility = folder:FindFirstChild("ServerAbility"..abilityName)
+        if not serverAbility then return end
+        serverAbility = require(serverAbility)
         self.abilities[abilityName] = serverAbility.new(self.backpack.entity,tool,abilityConfig)
     end
 end

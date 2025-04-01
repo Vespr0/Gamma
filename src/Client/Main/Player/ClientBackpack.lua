@@ -131,9 +131,10 @@ function ClientBackpack:equipTool(index: number)
         self.equippedToolID = tool:GetAttribute("ID")
         -- Attach handle
         self:attachHandle(dummyTool)
-        -- Play hold animation
-        -- self.entity.animator:play("Base","Hold")
-        print("Equipped tool: "..tool.Name,"Entity ID: "..self.entity.id)
+        -- Config
+        self.toolConfig = require(ToolUtility.GetAsset(tool.Name):FindFirstChild("Config"))
+        -- Add Walkspeed boost
+        self.entity.movement.boosts.WalkSpeed["Tool-"..self.equippedToolID] = self.toolConfig.walkSpeedBoost
     end
 end
 
@@ -146,6 +147,9 @@ function ClientBackpack:unequipTool()
     if dummyTool then
         dummyTool:Destroy()
     end
+    -- Remove Walkspeed boost
+    self.entity.movement.boosts.WalkSpeed["Tool-"..self.equippedToolID] = nil
+
     self.equippedTool = nil
     -- Stop hold animation
     -- self.entity.animator:stop("Base","Hold")

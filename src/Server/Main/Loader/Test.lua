@@ -1,9 +1,9 @@
 return function()
 	local MobSpawner = require(script.Parent.Parent.Parent.Main.Mobs.MobSpawner)
 
-	-- for i = 1, 3 do
-	-- 	MobSpawner.Spawn("Noob",CFrame.new(0,50,i*2))
-	-- end
+	for i = 1, 3 do
+		MobSpawner.Spawn("Noob",CFrame.new(0,50,i*2))
+	end
 
 	-- local ProjectileManager = require(game.ReplicatedStorage.Abilities.ProjectileManager)
 	

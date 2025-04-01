@@ -27,6 +27,9 @@ local VIEWMODEL_WHITELIST = { Game.Limbs.Torso, Game.Limbs.RightArm, Game.Limbs.
 local CAMERA = Workspace.CurrentCamera
 local VIEWMODEL_SCALE = 1
 
+-- Variables
+ViewmodelManager.Singleton = nil
+
 -- Helper functions
 local function scaleCFrame(cframe: CFrame, scale: number)
     local pos = cframe.Position * scale
@@ -52,11 +55,14 @@ function ViewmodelManager.new(entity: TypeEntity.ClientEntity)
 
     self.visible = true
     self.fakeTools = {}
+    self.currentFakeTool = nil
     self.rig = nil
     self.events = { NewRig = Signal.new() }
     self.trove = Trove.new()
 
     self:setup()
+
+    ViewmodelManager.Singleton = self
 
     return self
 end
@@ -102,6 +108,7 @@ function ViewmodelManager:setupToolEvents()
         for otherID, fakeTool in self.fakeTools do
             if otherID == ID then
                 fakeTool:show()
+                self.currentFakeTool = fakeTool
             else
                 fakeTool:hide()
             end
@@ -111,6 +118,7 @@ function ViewmodelManager:setupToolEvents()
     self.backpack.events.ToolUnequip:Connect(function(tool)
         local ID = tool:GetAttribute("ID")
         self.fakeTools[ID]:hide()
+        self.currentFakeTool = nil
     end)
 end
 
@@ -183,7 +191,7 @@ end
 function ViewmodelManager:updateRigPosition()
     if not self.rig then return end
     local cameraCFrame = CAMERA.CFrame
-    local origin = cameraCFrame + (cameraCFrame.LookVector/2) - (cameraCFrame.UpVector * VIEWMODEL_SCALE)
+    local origin = cameraCFrame + (cameraCFrame.LookVector/2) - (cameraCFrame.UpVector * (VIEWMODEL_SCALE+1/2))
     self.rig:PivotTo(origin)
 end
 
@@ -302,7 +310,7 @@ end
 
 function ViewmodelManager.Init()
     if ClientEntity.LocalPlayerInstance then
-        ViewmodelManager.new(ClientEntity.LocalPlayerInstance)
+       ViewmodelManager.new(ClientEntity.LocalPlayerInstance)
     end
     ClientEntity.GlobalAdded:Connect(function(entity)
         if not entity.isLocalPlayer then return end
