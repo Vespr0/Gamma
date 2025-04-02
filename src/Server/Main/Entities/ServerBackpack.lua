@@ -6,7 +6,7 @@ local BaseBackpack = require(ReplicatedStorage.Classes.Bases.BaseBackpack)
 local Signal = require(ReplicatedStorage.Packages.signal)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local TypeEntity = require(ReplicatedStorage.Types.TypeEntity)
--- Variables
+-- VariablesFF
 local ServerBackpack = setmetatable({}, {__index = BaseBackpack})
 ServerBackpack.__index = ServerBackpack
 ServerBackpack.Instances = {}

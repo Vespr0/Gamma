@@ -1,27 +1,27 @@
 local ProjectileManager = {}
 
+-- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
-
-local Remotes = ReplicatedStorage.Remotes
-
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 
+-- Constants
+local GRAVITY_FACTOR = 1
+local IS_SERVER = RunService:IsServer()
+
+-- Modules
+local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
+local Game = require(ReplicatedStorage.Utility.Game)
+
+-- Remotes
+local Remotes = ReplicatedStorage.Remotes
 
 --local ServerModules 
 local ExplosionModule 
-local GRAVITY_FACTOR = 1
 
-local IsServer = RunService:IsServer()
-if IsServer then
-	--ServerModules = ServerScriptService.Modules
-	--ExplosionModule = require(ServerModules.Entities.ExplosionModule)
-end
-local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
-local Game = require(ReplicatedStorage.Utility.Game)
 --[[
 local function TweenVisualProjectile(Object,Direction)
 	local Info = TweenInfo.new(.5,Enum.EasingStyle.Linear)
@@ -31,29 +31,29 @@ local function TweenVisualProjectile(Object,Direction)
 	Object:Destroy()
 end]]
 
-local function TweenProjectile(Object,MySize,Time)
-	local Info = TweenInfo.new(Time,Enum.EasingStyle.Linear)
-	local Tween = TweenService:Create(Object,Info,{Size = MySize,Transparency = 1})
+-- Helper Functions
+local function TweenProjectile(Object, MySize, Time)
+	local Info = TweenInfo.new(Time, Enum.EasingStyle.Linear)
+	local Tween = TweenService:Create(Object, Info, {Size = MySize, Transparency = 1})
 	Tween:Play()
 end
 
-local function TweenCFrame(Part,Time,Value)
-	local TweenInfo = TweenInfo.new(Time,Enum.EasingStyle.Linear,Enum.EasingDirection.In)
-	local Tween = TweenService:Create(Part,TweenInfo,{CFrame = Value})
+local function TweenCFrame(Part, Time, Value)
+	local TweenInfo = TweenInfo.new(Time, Enum.EasingStyle.Linear, Enum.EasingDirection.In)
+	local Tween = TweenService:Create(Part, TweenInfo, {CFrame = Value})
 	Tween:Play()
 end
 
-
-local function TweenPosition(Part,Time,Value)
+local function TweenPosition(Part, Time, Value)
 	task.spawn(function()
-		local TweenInfo = TweenInfo.new(Time,Enum.EasingStyle.Linear,Enum.EasingDirection.In)
-		local Tween = TweenService:Create(Part,TweenInfo,{Position = Value})
+		local TweenInfo = TweenInfo.new(Time, Enum.EasingStyle.Linear, Enum.EasingDirection.In)
+		local Tween = TweenService:Create(Part, TweenInfo, {Position = Value})
 		Tween:Play()
 	end)
 end 
 
-function ProjectileManager.Dynamic(args--[[,toolArgs]])
-
+-- Main Functions
+function ProjectileManager.Dynamic(args)
 	--[[ 
      	The arguments can either be a table or a module, if they are a module it means it's directlly referring to
      	the stats of a tool, witch specify certain variables with the keyword "Projectile", we need to convert the keys
@@ -76,36 +76,32 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 	-- 	args["ClientStepEvent"] = rawToolArgs["ClientProjectileStepEvent"]
 	-- 	args["ClientBounceEvent"] = rawToolArgs["ClientProjectileBounceEvent"]
 	-- end
-	args["Amplitude"] = args["Amplitude"] or 40
-	args["Bounces"] = args["Bounces"] or 0
-	args["Range"] = args["Range"] or 1000
-	args["Speed"] = args["Speed"] or 200
-	args["Thickness"] = args["Thickness"] or 0.1
+	args.Amplitude = args.Amplitude or 40
+	args.Bounces = args.Bounces or 0
+	args.Range = args.Range or 1000
+	args.Speed = args.Speed or 200
+	args.Thickness = args.Thickness or 0.1
 	local gravity = args.Amplitude / args.Speed * GRAVITY_FACTOR
 	local stepTime = args.Amplitude / args.Speed
 	local bounces = args.Bounces
 
 	-- Client replication.
-	if IsServer then
+	if IS_SERVER then
 		for _,player in pairs(Players:GetChildren()) do
-			--if not Args["ClientReplicationBlacklist"] or not table.find(Args["ClientReplicationBlacklist"],player.UserId) then
-
-			-- Remember that functions cannot be passed trough remote events (no ClientStepFunction, ClientBounceFunction ecc.)
-			Remotes.Projectile:FireClient(player,args--[[,toolargs]])
-
-
-			--end
+			if not args.ClientReplicationBlacklist or not table.find(args.ClientReplicationBlacklist,player.UserId) then
+				Remotes.Projectile:FireClient(player,args)
+			end
 		end	
 	end
 
 	local projectile 
 	local debugbeam
 
-	local CurrentPosition = args["Origin"] 
-	local CurrentDirection = (args["Direction"].Unit)*args["Amplitude"]
+	local CurrentPosition = args.Origin 
+	local CurrentDirection = (args.Direction.Unit)*args.Amplitude
 
 	-- Projectile visuals setup
-	if not IsServer then
+	if not IS_SERVER then
 		if args.CustomProjectile then
 			projectile = AssetsDealer.GetDir("Meshes",args.CustomProjectile,"Clone")
 		else
@@ -113,7 +109,7 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 			projectile.Color = args.Color or Color3.fromRGB(255, 245, 96)
 			projectile.Transparency = 1
 			projectile.Material = Enum.Material.Neon
-			projectile.Size = Vector3.new(args["Thickness"],args["Thickness"],CurrentDirection.Magnitude)
+			projectile.Size = Vector3.new(args.Thickness,args.Thickness,CurrentDirection.Magnitude)
 			local TransparencyTween = TweenService:Create(projectile,TweenInfo.new(3),{Transparency = .5})
 			TransparencyTween:Play()
 		end
@@ -133,7 +129,7 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 		projectile.CanCollide = false
 		projectile.Transparency = .5
 		projectile.CFrame = CFrame.lookAt(CurrentPosition+CurrentDirection/2,CurrentPosition+CurrentDirection)
-		projectile.Size = Vector3.new(.3,.3,args["Amplitude"])
+		projectile.Size = Vector3.new(.3,.3,args.Amplitude)
 		projectile.Color = Color3.new(1, 0, 0)
 		projectile.Material = Enum.Material.Neon
 	end
@@ -154,26 +150,22 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 		--local bounced = false
 
 		local function bounce()
-			-- Boing!
-			--bounced = true
-			if not IsServer then
-				print(args["ClientBounceEvent"])
-				if args["ClientBounceEvent"] then
-					args["ClientBounceEvent"](stepTime,projectile)
+			if not IS_SERVER then
+				if args.ClientBounceEvent then
+					args.ClientBounceEvent(stepTime,projectile)
 				end
 			end	
 			CurrentDirection = (CurrentDirection - (2 * CurrentDirection:Dot(Raycast.Normal) * Raycast.Normal)).Unit * CurrentDirection.Magnitude
-			--CurrentPosition += CurrentDirection
 			bounces -= 1
 		end
 
 		local function explode()
-			-- Kaboom!
+			-- TODO
 			--ExplosionModule.Ignite(Raycast.Position-CurrentDirection.Unit,args["ExplosionRadius"],args["ExplosionForce"],args["Team"])
 		end
 
 		if Raycast then
-			if IsServer then
+			if IS_SERVER then
 				local instance = Raycast.Instance
 				if instance then
 					-- local isGlass = instance.Material == Enum.Material.Ice and instance.Transparency > 0
@@ -188,10 +180,10 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 						local team = Entity:GetAttribute("Team")
 						if Entity:FindFirstChild("Humanoid") and team then
 							if instance:IsDescendantOf(Entity) then
-								if args["IsExplosive"] then
+								if args.IsExplosive then
 									explode()
 								end
-								local isTeammate = team ~= "None" and team == args["Team"] 
+								local isTeammate = team ~= "None" and team == args.Team 
 								return {["Position"]=Raycast.Position,["Normal"]=Raycast.Normal,["Instance"]=instance,["Entity"]=Entity,["IsTeammate"] = isTeammate}
 							end					
 						end
@@ -199,7 +191,7 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 					if bounces > 0 then
 						bounce()
 					else
-						if args["IsExplosive"] then
+						if args.IsExplosive then
 							explode()
 						end
 						return {["Position"]=Raycast.Position,["Instance"]=instance,["Normal"]=Raycast.Normal}
@@ -208,7 +200,7 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 					if bounces > 0 then
 						bounce()
 					else
-						if args["IsExplosive"] then
+						if args.IsExplosive then
 							explode()
 						end
 						return {["Position"]=Raycast.Position,["Normal"]=Raycast.Normal}
@@ -229,9 +221,9 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 		CurrentDirection -= Vector3.new(0,gravity,0)
 		--end
 
-		if not IsServer then
-			if args["ClientStepEvent"] then
-				args["ClientStepEvent"](stepTime,projectile)
+		if not IS_SERVER then
+			if args.ClientStepEvent then
+				args.ClientStepEvent(stepTime,projectile)
 			end
 		end
 		local Cframe = CFrame.lookAt(CurrentPosition,CurrentPosition+CurrentDirection)
@@ -243,18 +235,18 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 		return false
 	end
 
-	for i = 1,args["Range"]/args["Amplitude"] do
+	for i = 1,args.Range/args.Amplitude do
 		local func = Step()
 		if func then
 			CurrentDirection -= Vector3.new(0,gravity,0)
 			CurrentPosition += CurrentDirection
-			if not IsServer then
-				local FinalStepLenght = args["Amplitude"]/2
-				local FinalStepTime = stepTime*(FinalStepLenght/args["Amplitude"])				
+			if not IS_SERVER then
+				local FinalStepLenght = args.Amplitude/2
+				local FinalStepTime = stepTime*(FinalStepLenght/args.Amplitude)				
 				local Cframe = CFrame.lookAt(CurrentPosition,CurrentPosition+(CurrentDirection*FinalStepLenght))
 				TweenCFrame(projectile,FinalStepTime,Cframe)
 				if not args.CustomProjectile then
-					projectile.Size = Vector3.new(args["Thickness"],args["Thickness"],FinalStepLenght)
+					projectile.Size = Vector3.new(args.Thickness,args.Thickness,FinalStepLenght)
 				end
 				task.wait(FinalStepTime)
 				projectile:Destroy()					
@@ -263,16 +255,16 @@ function ProjectileManager.Dynamic(args--[[,toolArgs]])
 		end
 	end
 
-	if not IsServer then
+	if not IS_SERVER then
 		projectile:Destroy()			
 	end
 	return "Expired"
 end
 
 function ProjectileManager.Init()
-	if not IsServer then
-		Remotes.Projectile.OnClientEvent:Connect(function(args--[[,toolArgs]])
-			ProjectileManager.Dynamic(args--[[,toolArgs]])
+	if not IS_SERVER then
+		Remotes.Projectile.OnClientEvent:Connect(function(args)
+			ProjectileManager.Dynamic(args)
 		end)
 	end
 end
