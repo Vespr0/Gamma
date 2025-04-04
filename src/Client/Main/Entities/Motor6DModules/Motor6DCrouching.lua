@@ -33,8 +33,8 @@ function Motor6DCrouching.Connect(utility, rig: TypeRig.Rig)
     end
 
     trove:Add(rig.AttributeChanged:Connect(function(attribute: string)
-        local fromLocalPlayer = utility.isLocalPlayer and attribute == BIAS_NAME
-        local fromEntity = not utility.isLocalPlayer and attribute == "Synced"..BIAS_NAME
+        local fromLocalPlayer = utility.isLocalPlayerInstance and attribute == BIAS_NAME
+        local fromEntity = not utility.isLocalPlayerInstance and attribute == "Synced"..BIAS_NAME
         
         if fromLocalPlayer or fromEntity then
             local mode = rig:GetAttribute(attribute)

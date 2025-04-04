@@ -12,6 +12,7 @@ local Signal = require(ReplicatedStorage.Packages.signal)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local TypeEntity = require(ReplicatedStorage.Types.TypeEntity)
 local ViewmodelManager = require(script.Parent.Parent.Character.ViewmodelManager)
+local Loading = require(ReplicatedStorage.Utility.Loading)
 -- Network
 local AbilitiesMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Abilities")
 -- Constants
@@ -63,13 +64,21 @@ end
 function BaseClientAbility:setup()
 	self.animationPreamble = "Tool".."-"..self.tool:GetAttribute("ID").."-"..self.tool.Name
 	task.spawn(function()
-		repeat task.wait() until self.entity.backpack -- TODO: Add timeout
+		local backpack, err = Loading.waitFor(function()
+			return self.entity.backpack
+		end, 5)
+
+		if not backpack then
+			warn("Failed to get backpack for ability:", err)
+			return
+		end
+
 		-- Tool events
-		self.trove:Add(self.entity.backpack.events.ToolEquip:Connect(function(_,index: number)
+		self.trove:Add(backpack.events.ToolEquip:Connect(function(_,index: number)
 			if index ~= self.tool:GetAttribute("Index") then return end
 			self.events.Equipped:Fire()
 		end))
-		self.trove:Add(self.entity.backpack.events.ToolUnequip:Connect(function(_,index: number)
+		self.trove:Add(backpack.events.ToolUnequip:Connect(function(_,index: number)
 			if index ~= self.tool:GetAttribute("Index") then return end
 			self.events.Unequipped:Fire()
 		end))

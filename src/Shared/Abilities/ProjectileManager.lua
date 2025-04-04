@@ -15,6 +15,7 @@ local IS_SERVER = RunService:IsServer()
 -- Modules
 local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
 local Game = require(ReplicatedStorage.Utility.Game)
+local DamageManager = require(ServerScriptService.Main.Abilities.DamageManager)
 
 -- Remotes
 local Remotes = ReplicatedStorage.Remotes
@@ -85,13 +86,17 @@ function ProjectileManager.Dynamic(args)
 	local stepTime = args.Amplitude / args.Speed
 	local bounces = args.Bounces
 
-	-- Client replication.
-	if IS_SERVER then
+	-- Client replication
+	if not IS_SERVER then
+		-- Send projectile data to server
+		Remotes.Projectile:FireServer(args)
+	else
+		-- Server sends to all clients except the firing client
 		for _,player in pairs(Players:GetChildren()) do
 			if not args.ClientReplicationBlacklist or not table.find(args.ClientReplicationBlacklist,player.UserId) then
 				Remotes.Projectile:FireClient(player,args)
 			end
-		end	
+		end    
 	end
 
 	local projectile 
@@ -159,9 +164,15 @@ function ProjectileManager.Dynamic(args)
 			bounces -= 1
 		end
 
-		local function explode()
-			-- TODO
-			--ExplosionModule.Ignite(Raycast.Position-CurrentDirection.Unit,args["ExplosionRadius"],args["ExplosionForce"],args["Team"])
+		local function handleHit(hitData)
+			if IS_SERVER then
+				-- Server handles damage based on client's hit data
+				if hitData.Entity and hitData.Entity:FindFirstChild("Humanoid") then
+					local damage = args.Damage or 10
+					DamageManager.Damage(hitData.Entity:GetAttribute("ID"), args.SourceEntityID, damage, nil)
+				end
+			end
+			return hitData
 		end
 
 		if Raycast then
@@ -184,7 +195,13 @@ function ProjectileManager.Dynamic(args)
 									explode()
 								end
 								local isTeammate = team ~= "None" and team == args.Team 
-								return {["Position"]=Raycast.Position,["Normal"]=Raycast.Normal,["Instance"]=instance,["Entity"]=Entity,["IsTeammate"] = isTeammate}
+								return handleHit({
+									Position = Raycast.Position,
+									Normal = Raycast.Normal,
+									Instance = instance,
+									Entity = Entity,
+									IsTeammate = isTeammate
+								})
 							end					
 						end
 					end 
@@ -194,7 +211,10 @@ function ProjectileManager.Dynamic(args)
 						if args.IsExplosive then
 							explode()
 						end
-						return {["Position"]=Raycast.Position,["Instance"]=instance,["Normal"]=Raycast.Normal}
+						return handleHit({
+							Position = Raycast.Position,
+							Normal = Raycast.Normal
+						})
 					end
 				else
 					if bounces > 0 then
@@ -203,7 +223,10 @@ function ProjectileManager.Dynamic(args)
 						if args.IsExplosive then
 							explode()
 						end
-						return {["Position"]=Raycast.Position,["Normal"]=Raycast.Normal}
+						return handleHit({
+							Position = Raycast.Position,
+							Normal = Raycast.Normal
+						})
 					end
 				end			
 			else
@@ -211,7 +234,11 @@ function ProjectileManager.Dynamic(args)
 					bounce()
 				else
 				
-					return {["Position"]=Raycast.Position,["Instance"] = Raycast.Instance,["Normal"]=Raycast.Normal}
+					return handleHit({
+						Position = Raycast.Position,
+						Instance = Raycast.Instance,
+						Normal = Raycast.Normal
+					})
 				end
 			end
 		end	

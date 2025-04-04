@@ -1,121 +1,94 @@
 local Greedy = {}
 
--- royal0959 implementation but better
-
 -- Services
 local RunService = game:GetService("RunService")
 local Debris = game:GetService("Debris")
 
 -- Constants
 local AXIS_ENUMS = Enum.Axis:GetEnumItems()
+local MERGE_THRESHOLD = 0.1
+local POSITION_THRESHOLD = 0.02
+local MAX_PARALLEL_MERGES = 4
 
 local function canMerge(part1: BasePart, part2: BasePart, excludeAxis: string?)
+	if not part1 or not part2 then return false end
+	if not part1.Parent or not part2.Parent then return false end
+	
 	local equalAxises = 0
-
 	local equalPosAxises = 0
 
-	for _, axisEnum in pairs(Enum.Axis:GetEnumItems()) do
+	-- Quick position check first
+	for _, axisEnum in pairs(AXIS_ENUMS) do
 		local axis = axisEnum.Name
-
 		local diff = math.abs(part1.CFrame:ToObjectSpace(part2.CFrame).Position[axis])
-
-		if diff <= 0.02 then
+		if diff <= POSITION_THRESHOLD then
 			equalPosAxises += 1
-
-			if equalPosAxises == 2 then
-				break
-			end
+			if equalPosAxises == 2 then break end
 		end
 	end
 
-	if equalPosAxises < 2 then
-		return
+	if equalPosAxises < 2 then return false end
+
+	-- Property comparison
+	local compareProps = { "Color", "Material", "Transparency", "Shape" }
+	for _, prop in pairs(compareProps) do
+		if part1[prop] ~= part2[prop] then
+			return false
+		end
 	end
 
-	for _, axisEnum in pairs(Enum.Axis:GetEnumItems()) do
+	-- Size comparison
+	for _, axisEnum in pairs(AXIS_ENUMS) do
 		local axis = axisEnum.Name
-
-		if axis == excludeAxis then
-			continue
-		end
+		if axis == excludeAxis then continue end
 
 		local diff = math.abs(part1.Size[axis] - part2.Size[axis])
-
-		-- check if each of these properties are equal on both parts
-		local compareProps = { "Color", "Material", "Transparency", "Shape" }
-
-		local propsEqual = 0
-		for _, prop in pairs(compareProps) do
-			if part1[prop] ~= part2[prop] then
-				break
-			end
-
-			propsEqual += 1
-		end
-
-		local isPartOfSameGroup = propsEqual == #compareProps
-
-		if diff <= 0.1 and isPartOfSameGroup then
+		if diff <= MERGE_THRESHOLD then
 			equalAxises += 1
-
-			if equalAxises == 2 then
-				return true
-			end
+			if equalAxises == 2 then return true end
 		end
 	end
+
+	return false
 end
 
 function Greedy:MergeNearby(part: BasePart, OP: OverlapParams, mergeProperties: { [string]: any })
-	if not part.Parent then
-		return
-	end
+	if not part or not part.Parent then return end
 
-	-- if no overlap params is supplied, merge with anything
-	if not OP then
-		OP = OverlapParams.new()
-		OP.FilterType = Enum.RaycastFilterType.Include
-		OP.FilterDescendantsInstances = { workspace }
-	end
+	OP = OP or OverlapParams.new()
+	OP.FilterType = Enum.RaycastFilterType.Include
+	OP.FilterDescendantsInstances = { workspace }
 
 	mergeProperties = mergeProperties or {}
 
+	-- Cache part properties
+	local partCFrame = part.CFrame
+	local partSize = part.Size
+	local partOrientation = CFrame.Angles(
+		math.rad(part.Orientation.X),
+		math.rad(part.Orientation.Y),
+		math.rad(part.Orientation.Z)
+	)
+
 	for _, axisEnum in AXIS_ENUMS do
 		local axis = axisEnum.Name
+		local extend = CFrame.new(
+			axis == "X" and partSize.X / 2 or 0,
+			axis == "Y" and partSize.Y / 2 or 0,
+			axis == "Z" and partSize.Z / 2 or 0
+		)
 
 		for _, mult in { -1, 1 } do
-			local extend = CFrame.new(
-				axis == "X" and part.Size.X / 2 * mult or 0,
-				axis == "Y" and part.Size.Y / 2 * mult or 0,
-				axis == "Z" and part.Size.Z / 2 * mult or 0
-			)
-
-			local cfOrientation = CFrame.Angles(math.rad(part.Orientation.X), math.rad(part.Orientation.Y), math.rad(part.Orientation.Z))
-			local origin = part.CFrame * (extend * cfOrientation)
-
+			local origin = partCFrame * (extend * partOrientation)
 			local boundSize = mergeProperties.BoundSize or Vector3.new(0.001, 0.001, 0.001)
 			local touching = workspace:GetPartBoundsInBox(origin, boundSize, OP)
 
-			for i = 1, #touching do
-				local touchPart = touching[i]
+			for _, touchPart in touching do
+				if touchPart == part or not touchPart:IsA("Part") then continue end
+				if not canMerge(part, touchPart, axis) then continue end
+				if mergeProperties.Filter and not mergeProperties.Filter(part, touchPart, axis) then continue end
 
-				if touchPart == part then
-					continue
-				end
-
-				if not touchPart:IsA("Part") then
-					continue
-				end
-
-				if not canMerge(part, touchPart, axis, mergeProperties) then
-					continue
-				end
-
-				if mergeProperties.Filter then
-					if not mergeProperties.Filter(part, touchPart, axis) then
-						continue
-					end
-				end
-
+				-- Merge the parts
 				local mergeSize = Vector3.new(
 					axis == "X" and touchPart.Size.X or 0,
 					axis == "Y" and touchPart.Size.Y or 0,
@@ -130,11 +103,9 @@ function Greedy:MergeNearby(part: BasePart, OP: OverlapParams, mergeProperties: 
 
 				part.CFrame *= CFrame.new(mergePosition)
 				part.Size += mergeSize
-
 				touchPart:Destroy()
 
 				self:MergeNearby(part, OP, mergeProperties)
-
 				return
 			end
 		end
@@ -146,14 +117,33 @@ function Greedy:MergeParts(parts: { BasePart }, mergeProperties: { [string]: any
 	OP.FilterType = Enum.RaycastFilterType.Include
 	OP.FilterDescendantsInstances = { parts }
 
-	for p, part in parts do
-        if p%1000 == 0 then
-            RunService.Heartbeat:Wait()
-        end
-        
-        --if random:NextInteger(1, 10) ~= 1 then continue end -- For performance; TODO: Reconsider.
+	-- Split parts into chunks for parallel processing
+	local chunkSize = math.ceil(#parts / MAX_PARALLEL_MERGES)
+	local chunks = {}
+	
+	for i = 1, #parts, chunkSize do
+		local chunk = {}
+		for j = i, math.min(i + chunkSize - 1, #parts) do
+			table.insert(chunk, parts[j])
+		end
+		table.insert(chunks, chunk)
+	end
 
-		self:MergeNearby(part, OP, mergeProperties)
+	-- Process chunks in parallel
+	local threads = {}
+	for _, chunk in ipairs(chunks) do
+		local thread = task.spawn(function()
+			for _, part in ipairs(chunk) do
+				if not part or not part.Parent then continue end
+				self:MergeNearby(part, OP, mergeProperties)
+			end
+		end)
+		table.insert(threads, thread)
+	end
+
+	-- Wait for all threads to complete
+	for _, thread in ipairs(threads) do
+		task.wait(thread)
 	end
 end
 

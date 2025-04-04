@@ -8,15 +8,15 @@ local ProjectileManager = require(script.Parent.Parent.ProjectileManager)
 local SoundPlayer = require(Player.PlayerScripts.Main.Sound.SoundPlayer)
 local RunService = game:GetService("RunService")
 
-local ClientAbilityThrow = setmetatable({}, {__index = BaseClientAbility})
-ClientAbilityThrow.__index = ClientAbilityThrow
+local ClientAbilityProjectile = setmetatable({}, {__index = BaseClientAbility})
+ClientAbilityProjectile.__index = ClientAbilityProjectile
 -- Instances
 local Camera = workspace.CurrentCamera
 -- Constants
 local ABILITY_NAME = "Projectile"
 
-function ClientAbilityThrow.new(entity,tool,config)
-	local self = setmetatable(BaseClientAbility.new(ABILITY_NAME,entity,tool,config) :: TypeAbility.BaseClientAbility, ClientAbilityThrow)
+function ClientAbilityProjectile.new(entity,tool,config)
+	local self = setmetatable(BaseClientAbility.new(ABILITY_NAME,entity,tool,config) :: TypeAbility.BaseClientAbility, ClientAbilityProjectile)
 
 	self:setup()
 
@@ -25,7 +25,7 @@ function ClientAbilityThrow.new(entity,tool,config)
 	return self
 end
 
-function ClientAbilityThrow:fire()
+function ClientAbilityProjectile:fire()
     if not self.abilityConfig.continuousFire then
         SoundPlayer.PlaySound(self.abilityConfig.sound,0.5)
     end
@@ -41,7 +41,7 @@ function ClientAbilityThrow:fire()
     ProjectileManager.Dynamic(projectileConfig)
 end
 
-function ClientAbilityThrow:setupInputs()
+function ClientAbilityProjectile:setupInputs()
     local inputDown = false
     self.currentSound = nil
 
@@ -84,16 +84,17 @@ function ClientAbilityThrow:setupInputs()
     end))
 end
 
-function ClientAbilityThrow:setup()
+function ClientAbilityProjectile:setup()
 	-- Setup inputs for the local player
-	if self.entity.isLocalPlayer then self:setupInputs() end
+    warn(self.entity.isLocalPlayerInstance)
+	if self.entity.isLocalPlayerInstance then self:setupInputs() end
 end
 
-function ClientAbilityThrow:destroy()
+function ClientAbilityProjectile:destroy()
     if self.currentSound then
         self.currentSound:Destroy()
     end
 	self:destroySub()
 end
 
-return ClientAbilityThrow
+return ClientAbilityProjectile

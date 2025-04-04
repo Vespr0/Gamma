@@ -18,6 +18,8 @@ local CAVE_DENSITY = 0.5
 local DIRT_LAYER_THICKNESS = 0.1
 local CRAZINESS = 0.7
 local SEA_LEVEL = 30
+local CHUNK_SIZE = 16
+local BATCH_SIZE = 100
 
 function Terra.new(origin: Vector3, terrain)
 	local self = setmetatable({}, Terra)
@@ -28,6 +30,10 @@ function Terra.new(origin: Vector3, terrain)
 
 	self.terrain = terrain
 	self.folder = terrain.folder
+	
+	-- Chunk tracking
+	self.generatedChunks = {}
+	self.pendingParts = {}
 
 	return self
 end
@@ -44,12 +50,16 @@ function Terra:noiseCoordinateToWorldCoordinate(c)
 	return c*Game.Generation.PART_WIDTH - Game.Generation.WORLD_SIZE/2
 end
 
--- TODO: too many checks, they can be optimized
 function Terra:generatePart(x,y,z)
 	local info = {}
 
 	local position = Vectors.snap(Vector3.new(x,y,z))
 	local partsInfoKey = self:getPositionStringKey(position)
+
+	-- Skip if already generated
+	if self.partsInfo[partsInfoKey] then
+		return self.partsInfo[partsInfoKey].part
+	end
 
 	-- Densities
 	local terrainNoise = self:get3DNoise(x, y, z,self.seed,true)
@@ -130,38 +140,80 @@ function Terra:decoratePart(part)
 	Parts.ApplyType(part, getTerrainType())
 end
 
+function Terra:generateChunk(chunkX, chunkZ)
+	local chunkKey = string.format("%d,%d", chunkX, chunkZ)
+	if self.generatedChunks[chunkKey] then return end
+	
+	local startX = chunkX * CHUNK_SIZE
+	local startZ = chunkZ * CHUNK_SIZE
+	
+	for x = startX, startX + CHUNK_SIZE - 1 do
+		for y = 1, MAP_HEIGHT do
+			for z = startZ, startZ + CHUNK_SIZE - 1 do
+				self:generatePart(x, y, z)
+			end
+		end
+	end
+	
+	self.generatedChunks[chunkKey] = true
+end
+
+function Terra:processBatch()
+	if #self.pendingParts == 0 then return end
+	
+	local batch = {}
+	for i = 1, math.min(BATCH_SIZE, #self.pendingParts) do
+		table.insert(batch, table.remove(self.pendingParts))
+	end
+	
+	for _, part in ipairs(batch) do
+		self:decoratePart(part)
+	end
+	
+	if #self.pendingParts > 0 then
+		task.spawn(function()
+			task.wait(0.1) -- Prevent overwhelming the server
+			self:processBatch()
+		end)
+	end
+end
+
 function Terra:generate()
 	self.partsPerSide = Game.Generation.WORLD_SIZE / Game.Generation.PART_WIDTH
 	self.parts = 0
 	self.partsInfo = {}
 	self.surfaceHeights = {}
+	self.pendingParts = {}
 
 	print("Generating geometry...")
 
-	for x = 1, self.partsPerSide do
-		if x % 300 == 1 then
-			RunService.Heartbeat:Wait()
-		end
-		for y = 1, MAP_HEIGHT do
-			for z = 1, self.partsPerSide do
-				if self.parts % 1000 == 1 then
-					RunService.Heartbeat:Wait()
+	-- Generate chunks in a spiral pattern from center
+	local numChunks = math.ceil(self.partsPerSide / CHUNK_SIZE)
+	local centerChunk = math.floor(numChunks / 2)
+	
+	for radius = 0, centerChunk do
+		for x = -radius, radius do
+			for z = -radius, radius do
+				if math.abs(x) == radius or math.abs(z) == radius then
+					self:generateChunk(centerChunk + x, centerChunk + z)
+					if radius > 0 then
+						RunService.Heartbeat:Wait()
+					end
 				end
-				
-				self:generatePart(x, y, z)
 			end
 		end
 	end
+	
 	print("Geometry generated")
 
 	print("Decorating geometry...")
-	-- Determine surface parts
-	for i, part in pairs(self.folder:GetChildren()) do
-		if i % 1000 == 1 then
-			RunService.Heartbeat:Wait()
-		end
-		self:decoratePart(part)
+	-- Queue all parts for decoration
+	for _, part in pairs(self.folder:GetChildren()) do
+		table.insert(self.pendingParts, part)
 	end
+	
+	-- Process decoration in batches
+	self:processBatch()
 	print("Geometry decorated")
 end
 

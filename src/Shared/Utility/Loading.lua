@@ -10,6 +10,26 @@ end
 
 Loading.Initialized = {}
 
+-- Utility function to wait for a resource with timeout
+function Loading.waitFor(getter, timeout, interval)
+    timeout = timeout or 5
+    interval = interval or 0.1
+    
+    local startTime = os.clock()
+    local resource = getter()
+    
+    while not resource do
+        if os.clock() - startTime > timeout then
+            return nil, "Timeout waiting for resource"
+        end
+        
+        task.wait(interval)
+        resource = getter()
+    end
+    
+    return resource
+end
+
 function Loading.LoadModules(folder,blacklist)
 	local descendants = folder:GetDescendants()
 	local modules = {}

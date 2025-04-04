@@ -39,7 +39,7 @@ end
 
 function ClientAbilityThrow:setup()
 	-- Setup inputs for the local player
-	if self.entity.isLocalPlayer then self:setupInputs() end
+	if self.entity.isLocalPlayerInstance then self:setupInputs() end
 end
 
 function ClientAbilityThrow:destroy()

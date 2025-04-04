@@ -42,7 +42,7 @@ function ClientAnima:setup()
 		self:setupEntity(ClientEntity.LocalPlayerInstance)
 	end
 	ClientEntity.GlobalAdded:Connect(function(entity)
-		if entity.isLocalPlayer then
+		if entity.isLocalPlayerInstance then
 			self:setupEntity(entity)
 		end
 	end)

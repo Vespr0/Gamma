@@ -55,6 +55,7 @@ function ServerAnima:loadCharacter()
 	rig.Humanoid.Health = rig.Humanoid.MaxHealth -- TODO: I have to do this, i have no fucking clue why
 
 	self.entity = ServerEntity.new(rig,self.player)
+	rig:SetAttribute("IsLocalPlayerInstance", true)
 	self.events.EntityAdded:Fire(self.entity)
 
 	warn("Applied entityID attribute to player")

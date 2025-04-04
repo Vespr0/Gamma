@@ -33,7 +33,7 @@ function Animator.Print()
 	end
 end
 
-function Animator.new(rig, isLocalPlayer)
+function Animator.new(rig, isLocalPlayerInstance)
 	local id = rig:GetAttribute("ID")
 	assert(id,`ID Attribute of rig "{rig.Name}" is nil.`)
 	assert(not Animator.Get(id), `Animator instance with ID "{id}" already exists. Attempt on rig "{rig.Name}".`)
@@ -63,8 +63,8 @@ function Animator.new(rig, isLocalPlayer)
 	-- Play idle by default
 	self:play("Base", "Idle")
 
-	self.isLocalPlayer = isLocalPlayer
-	self.key = isLocalPlayer and "Local" or self.id 
+	self.isLocalPlayerInstance = isLocalPlayerInstance
+	self.key = isLocalPlayerInstance and "Local" or self.id 
 	Animator.Instances[self.key] = self
 	Animator.GlobalAdded:Fire(self)
 	

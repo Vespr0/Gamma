@@ -19,10 +19,12 @@ ClientBackpack.LocalPlayerInstance = nil
 -- Network
 local BackpackMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Backpack")
 
-function ClientBackpack.new(entity)
+function ClientBackpack.new(entity,isLocalPlayerInstance)
     if not entity then error("No entity provided") return end
     
     local self = setmetatable(BaseBackpack.new(entity), ClientBackpack) -- send the entity to the base class
+    
+    self.isLocalPlayerInstance = isLocalPlayerInstance
 
     self:setup()
 
@@ -30,11 +32,7 @@ function ClientBackpack.new(entity)
 end
 
 function ClientBackpack:setup()
-    if self.entity.isLocalPlayer then 
-        ClientBackpack.LocalPlayerInstance = self
-        self.isLocalPlayerInstance = true
-    end
-
+    
     BackpackMiddleware.ReadToolAdded:Connect(function(entityID: number, index: number)
         if entityID ~= self.entity.id then return end
         self.events.ToolAdded:Fire(index)
@@ -46,6 +44,8 @@ function ClientBackpack:setup()
     end)
 
     if self.isLocalPlayerInstance then
+        ClientBackpack.LocalPlayerInstance = self
+
         -- For local player add hotbar input connection
         HotbarInput.Event:Connect(function(incremental: boolean, index: number)
             if incremental then

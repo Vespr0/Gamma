@@ -20,7 +20,7 @@ local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local ClientAnima = require(script.Parent.Parent.Player.ClientAnima) -- No need to get instance here
 local ClientEntity = require(script.Parent.Parent.Entities.ClientEntity)
 local TypeEntity = require(ReplicatedStorage.Types.TypeEntity)
-
+local Loading = require(ReplicatedStorage.Utility.Loading)
 -- Constants
 local VISIBLE_LIMBS = { Game.Limbs.RightArm, Game.Limbs.LeftArm }
 local VIEWMODEL_WHITELIST = { Game.Limbs.Torso, Game.Limbs.RightArm, Game.Limbs.LeftArm, Game.Limbs.RightLeg, "HumanoidRootPart", "Meshes" }
@@ -50,8 +50,6 @@ function ViewmodelManager.new(entity: TypeEntity.ClientEntity)
     
     self.anima = ClientAnima:get() -- should be local to player
     self.entity = entity
-    self.backpack = require(script.Parent.Parent.Player.ClientBackpack).LocalPlayerInstance
-    if not self.backpack then error("Attempt to create viewmodel manager instance without backpacks") return end
 
     self.visible = true
     self.fakeTools = {}
@@ -60,7 +58,21 @@ function ViewmodelManager.new(entity: TypeEntity.ClientEntity)
     self.events = { NewRig = Signal.new() }
     self.trove = Trove.new()
 
-    self:setup()
+    -- Wait for backpack using the Loading utility
+    task.spawn(function()
+        local backpack, err = Loading.waitFor(function()
+            local ClientBackpack = require(script.Parent.Parent.Entities.ClientBackpack)
+            return ClientBackpack.LocalPlayerInstance
+        end, 5) 
+        
+        if not backpack then
+            warn("Failed to get backpack:", err)
+            return
+        end
+
+        self.backpack = backpack
+        self:setup()
+    end)
 
     ViewmodelManager.Singleton = self
 
@@ -313,7 +325,7 @@ function ViewmodelManager.Init()
        ViewmodelManager.new(ClientEntity.LocalPlayerInstance)
     end
     ClientEntity.GlobalAdded:Connect(function(entity)
-        if not entity.isLocalPlayer then return end
+        if not entity.isLocalPlayerInstance then return end
         ViewmodelManager.new(entity)
     end)
 end

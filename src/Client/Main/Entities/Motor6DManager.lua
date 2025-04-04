@@ -37,7 +37,7 @@ function Motor6DManager.new(rig: TypeRig.Rig)
     local self = setmetatable({}, Motor6DManager)
 
     self.rig = rig or error("Rig is nil")
-    self.isLocalPlayer = rig == LocalPlayer.Character
+    self.isLocalPlayerInstance = rig == LocalPlayer.Character
     self.motors = {}
     self.defaults = {}
     self.connections = {}

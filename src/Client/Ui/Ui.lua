@@ -10,7 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 -- Modules
 local ClientAnima = require(script.Parent.Parent.Main.Player.ClientAnima)
-local ClientBackpack = require(script.Parent.Parent.Main.Player.ClientBackpack)
+local ClientBackpack = require(script.Parent.Parent.Main.Entities.ClientBackpack)
 local Fusion = require(ReplicatedStorage.Packages.fusion)
 local Signal = require(ReplicatedStorage.Packages.signal)
 local Trove = require(ReplicatedStorage.Packages.trove)

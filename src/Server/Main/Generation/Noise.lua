@@ -1,13 +1,38 @@
 local Noise = {}
 
+-- Cache for noise values
+local noiseCache = {}
+local CACHE_SIZE = 1000
+
 local function noise(x, y, seed)
-    return math.clamp(math.noise(x, y, seed)+0.5, 0, 1)
+    -- Check cache first
+    local key = string.format("%d,%d,%d", x, y, seed)
+    if noiseCache[key] then
+        return noiseCache[key]
+    end
+    
+    -- Generate new noise value
+    local value = math.clamp(math.noise(x, y, seed)+0.5, 0, 1)
+    
+    -- Cache the result
+    if #noiseCache > CACHE_SIZE then
+        table.remove(noiseCache, 1)
+    end
+    noiseCache[key] = value
+    
+    return value
 end
 
 function Noise.GenerateFractal(x, y, seed, scale, octaves, persistence, lacunarity)
     persistence = persistence or 0.4
     lacunarity = lacunarity or 2
     octaves = octaves or 8
+
+    -- Reduce octaves for distant terrain
+    local distance = math.sqrt(x*x + y*y)
+    if distance > scale * 2 then
+        octaves = math.max(4, octaves - 2)
+    end
 
     local total = 0
     local frequency = 1
@@ -25,6 +50,9 @@ function Noise.GenerateFractal(x, y, seed, scale, octaves, persistence, lacunari
     return total / maxValue
 end
 
+function Noise.ClearCache()
+    noiseCache = {}
+end
 
 function Noise.Debug(lenght,width)
 	for x = 1, lenght do

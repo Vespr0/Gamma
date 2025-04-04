@@ -14,8 +14,8 @@ local Animator = require(script.Parent.Animator)
 local TypeRig = require(ReplicatedStorage.Types.TypeRig)
 local Motor6DManager = require(script.Parent.Motor6DManager)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
-local ClientBackpack = require(script.Parent.Parent.Player.ClientBackpack)
-local ClientMovement = require(script.Parent.Parent.Character.ClientMovement)
+local ClientBackpack = require(script.Parent.Parent.Entities.ClientBackpack)
+local ClientMovement = require(script.Parent.Parent.Entities.ClientMovement)
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 ClientEntity.Instances = {}
@@ -33,8 +33,8 @@ function ClientEntity.new(rig: TypeRig.Rig)
 	local self = setmetatable(BaseEntity.new(rig,id), ClientEntity)
 
 	-- Store the instance linked to the current player character
-	self.isLocalPlayer = rig == LocalPlayer.Character
-	if self.isLocalPlayer then ClientEntity.LocalPlayerInstance = self end
+	self.isLocalPlayerInstance = rig:GetAttribute("IsLocalPlayerInstance") :: boolean
+	if self.isLocalPlayerInstance then ClientEntity.LocalPlayerInstance = self end
 	
 	self:setup()
 
@@ -61,7 +61,7 @@ function ClientEntity:setup()
 end
 
 function ClientEntity:setupMovement()
-	self.movement = ClientMovement.new(self)
+	self.movement = ClientMovement.new(self,self.isLocalPlayerInstance)
 end
 
 function ClientEntity:setupAnimations()
@@ -71,18 +71,19 @@ function ClientEntity:setupAnimations()
 		animateScript:Destroy()
 	end
 	-- Link an animator instance
-	self.animator = Animator.new(self.rig,self.isLocalPlayer)
+	self.animator = Animator.new(self.rig,self.isLocalPlayerInstance)
 end
 
 function ClientEntity:setupBackpack()
-	self.backpack = ClientBackpack.new(self)
+	self.backpack = ClientBackpack.new(self,self.isLocalPlayerInstance)
+	print(self.backpack,self.isLocalPlayerInstance)
 end
 
 function ClientEntity:destroy()
 	self.Motor6DManager:destroy()
 
 	ClientEntity.Instances[tostring(self.id)] = nil
-	if self.isLocalPlayer then ClientEntity.LocalPlayerInstance = nil end
+	if self.isLocalPlayerInstance then ClientEntity.LocalPlayerInstance = nil end
 
 	self:destroyBase()
 end
