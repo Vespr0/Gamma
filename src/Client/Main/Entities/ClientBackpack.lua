@@ -72,9 +72,7 @@ function ClientBackpack:setup()
     else
         -- For client entities that are not the local player's the server will send events
         BackpackMiddleware.ReadToolEquip:Connect(function(entityID: number, index: number)
-            print("Equipping tool",index,"for entity",entityID)
             if entityID ~= self.entity.id then return end
-            print(entityID,self.entity.id,self.entity.rig)
             self:equipTool(index)
         end)
 

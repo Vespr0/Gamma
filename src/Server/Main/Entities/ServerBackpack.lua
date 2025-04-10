@@ -36,7 +36,7 @@ function ServerBackpack.new(entity: TypeEntity.ServerEntity)
     ServerBackpack.Instances[entity.id] = self
 
     -- Setup abilities
-    ServerAbilities.new(self)
+    self.abilities = ServerAbilities.new(self)
 
     return self
 end
@@ -73,7 +73,7 @@ function ServerBackpack:setup()
     local function debugItems()
         self:addTool(ToolUtility.GetFromName("Minigun", true)) 
         self:addTool(ToolUtility.GetFromName("Pistol", true))
-        self:addTool(ToolUtility.GetFromName("Sword", true))   
+        -- self:addTool(ToolUtility.GetFromName("Sword", true))   
     end
 
     debugItems()

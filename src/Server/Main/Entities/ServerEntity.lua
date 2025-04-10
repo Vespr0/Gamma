@@ -18,7 +18,8 @@ ServerEntity.Instances = {}
 ServerEntity.GlobalAdded = Signal.new()
 ServerEntity.Counter = 0
 
-function ServerEntity.new(rig,player: Player | nil)
+function ServerEntity.new(rig,player: Player | nil, team: string)
+	team = team or "Neutral"
 	if not EntityUtility.IsHealthy(rig) then warn(`Rig "{rig.Name}" is not healthy, cannot create server entity instance`) return end
 
 	ServerEntity.Counter += 1
@@ -27,6 +28,11 @@ function ServerEntity.new(rig,player: Player | nil)
 
 	-- Player entity id attribute
 	if player then player:SetAttribute("EntityID", id) end
+
+	self.player = player
+
+	assert(Game.Teams[team], `Team "{team}" is not valid`)
+	self.team = team
 
 	self:setup()
 
@@ -37,7 +43,8 @@ function ServerEntity:setup()
 	self.Archivable = true
 	self.rig:SetAttribute("ID",self.id)
 	self.rig.Parent = Game.Folders.Entities
-	
+	self.rig:SetAttribute("Team",self.team)
+
 	self:setupHumanoid()
 	-- self:setupPhysicsController()
 	self:setupBackpack()

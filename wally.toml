@@ -21,3 +21,6 @@ raycasthitbox = "ulferno/raycasthitbox@4.0.2"
 # Voxel destruction
 greedymeshing = "royal0959/rblx-nonvoxel-greedy-meshing@1.0.3"
 partcache = "andremhpra/partcache@1.0.0"
+
+# Spring
+spring = "nightcycle/spring@1.0.0"

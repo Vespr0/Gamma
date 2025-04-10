@@ -61,20 +61,47 @@ function BaseAbility:setup()
 	end))
 end
 
-function BaseAbility:readAction(func)
-	print(AbilitiesMiddleware)
-	self.trove:Add(AbilitiesMiddleware.ReadAbility:Connect(function(entityID: number,abilityName: string, toolIndex: number,...)
-		print(entityID,abilityName,toolIndex,...)
-		if self.entity.id ~= entityID then return end
-		if abilityName ~= self.name then return end
-		if toolIndex ~= self.tool:GetAttribute("Index") then return end
+function BaseAbility:getCurrentFakeTool()
+	return self.entity.rig:FindFirstChildOfClass("Tool")
+end
 
-		func(...)
-	end))
+function BaseAbility:getCurrentFakeToolHandle()
+	return self:getCurrentFakeTool().Model.Handle
+end
+
+function BaseAbility:readAction(func)
+	if IS_SERVER then
+		self.trove:Add(AbilitiesMiddleware.ReadAbility:Connect(function(entityID: number,abilityName: string, toolIndex: number,...)
+			if self.entity.id ~= entityID then return end
+			if abilityName ~= self.name then return end
+			if toolIndex ~= self.tool:GetAttribute("Index") then return end
+			
+			func(...)
+		end))
+	else
+		self.trove:Add(AbilitiesMiddleware.ReadAbility:Connect(function(entityID: number,abilityName: string, toolIndex: number,...)
+			if self.entity.id ~= entityID then return end
+			if abilityName ~= self.name then return end
+			if toolIndex ~= self.tool:GetAttribute("Index") then return end
+
+			func(...)
+		end))
+	end
 end
 
 function BaseAbility:sendAction(...)
-	return AbilitiesMiddleware.SendAbility:Fire(self.name,self.tool:GetAttribute("Index"),...)
+	if IS_SERVER then
+		--[[  
+			Not the player that controls the entity associated with this instance, but rather the player
+		    that needs to replicate the entity's ability in his client.
+		]]
+		local args = {...}
+		local replicationPlayer = args[1]
+		return AbilitiesMiddleware.SendAbility:Fire(replicationPlayer, self.entity.id, self.name, self.tool:GetAttribute("Index"), select(2, ...))
+	else
+		-- Client doesn't need to send entity id since only players initiate ability requests
+		return AbilitiesMiddleware.SendAbility:Fire(self.name, self.tool:GetAttribute("Index"), ...)
+	end
 end
 
 function BaseAbility:isToolEquipped()

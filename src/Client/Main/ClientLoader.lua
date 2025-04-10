@@ -49,8 +49,6 @@ local function load()
     -- Load Conch
     Conch.initiate_default_lifecycle()
     ConchUi.bind_to(Enum.KeyCode.F4)
-    -- Load Projectile Manager
-    ProjectileManager.Init()
     setProgress(1)
     print("Modules loaded")
 end

@@ -28,12 +28,14 @@ function ClientAbilityThrow:activate()
 	if self:isHot() then return end
 	self:heat()
 
+	-- Highlighter.Highlight(self:getCurrentFakeToolHandle())
+	
 	if self.hitbox then self.hitbox:Destroy() end
 
 	self.hitbox = MeleeUtility.CreateHitbox(self.entity.rig)
 
 	self.hitbox.Hit:Connect(function(entityID, hitPartName)
-		SoundPlayer.PlaySound("Tools/Sword/FleshSlash",0.5)
+		SoundPlayer.PlaySound("Tools/Sword/FleshSlash",self:getCurrentFakeToolHandle(),0.5)
 		self:sendAction("Damage",entityID, hitPartName)
 	end)
 
@@ -42,7 +44,7 @@ function ClientAbilityThrow:activate()
 	print(self.hitbox)
 	task.spawn(function()
 		task.wait(0.2)
-		SoundPlayer.PlaySound("Tools/Sword/Swing",0.5)
+		SoundPlayer.PlaySound("Tools/Sword/Swing",self:getCurrentFakeToolHandle(),0.5)
 		self.hitbox:HitStart()
 		task.wait(0.4)
 		self.hitbox:HitStop()

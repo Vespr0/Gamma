@@ -26,19 +26,19 @@ function Middleware.Init(util)
 			checkAbilityNameAndToolIndex(abilityName, toolIndex)
 			
 			local entityID = EntityUtility.GetEntityIDFromPlayer(player)
-			print(player.Character)
+
 			Middleware.ReadAbility:Fire(entityID, abilityName, toolIndex,...)
         end)
 
 		-- Send Server 
-		Middleware.ReplicateAbility = util.signal.new()
+		Middleware.SendAbility = util.signal.new()
 
-		-- Replicate ability to other clients
-		Middleware.ReplicateAbility:Connect(function(entityID: number, abilityName, toolIndex,...)
+		-- Replicate ability to other clients: Needs entity id to distinguish between entities
+		Middleware.SendAbility:Connect(function(player, entityID, abilityName, toolIndex,...)
 			checkAbilityNameAndToolIndex(abilityName, toolIndex)
 			checkEntityID(entityID)
 
-			util.remote:FireClient(entityID, abilityName, toolIndex,...)
+			util.remote:FireClient(player, entityID, abilityName, toolIndex,...)
 		end)
     else
         -- Send Client
@@ -49,6 +49,18 @@ function Middleware.Init(util)
 
 			util.remote:FireServer(abilityName,toolIndex,...)
         end)
+
+		-- Read Client
+		local ReadClient = util.remote.OnClientEvent
+		Middleware.ReadAbility = util.signal.new()
+
+		-- Replicate ability to other clients
+		ReadClient:Connect(function(entityID: number, abilityName: string, toolIndex: number,...)
+			checkAbilityNameAndToolIndex(abilityName, toolIndex)
+			checkEntityID(entityID)
+
+			Middleware.ReadAbility:Fire(entityID, abilityName, toolIndex,...)
+		end)
     end
 end
 

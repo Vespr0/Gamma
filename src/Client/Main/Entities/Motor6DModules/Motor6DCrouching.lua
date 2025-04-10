@@ -10,9 +10,9 @@ local BIAS_NAME = "Crouching"
 local SMOOTHNESS = 10
 
 function Motor6DCrouching.Connect(utility, rig: TypeRig.Rig)
-    utility:checkMotors("RootJoint", "Right Hip", "Left Hip")
+    local self = {}
 
-    local trove = Trove.new()
+    utility:checkMotors("RootJoint", "Right Hip", "Left Hip")
 
     local function animate(mode: boolean)
         if mode then
@@ -32,7 +32,7 @@ function Motor6DCrouching.Connect(utility, rig: TypeRig.Rig)
         end
     end
 
-    trove:Add(rig.AttributeChanged:Connect(function(attribute: string)
+    self.connection = rig.AttributeChanged:Connect(function(attribute: string)
         local fromLocalPlayer = utility.isLocalPlayerInstance and attribute == BIAS_NAME
         local fromEntity = not utility.isLocalPlayerInstance and attribute == "Synced"..BIAS_NAME
         
@@ -40,9 +40,9 @@ function Motor6DCrouching.Connect(utility, rig: TypeRig.Rig)
             local mode = rig:GetAttribute(attribute)
             animate(mode)
         end
-    end))
+    end)
 
-    return trove
+    return self
 end
 
 return Motor6DCrouching

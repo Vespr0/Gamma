@@ -19,11 +19,22 @@ function ServerAbilities.new(serverBackpack)
 
 	if not serverBackpack then error("ClientBackpack is missing"); return end
 
+    self.abilities = {}
     self.backpack = serverBackpack
 
     self:setup()
 
     return self
+end
+
+function ServerAbilities:getMindController(toolName: string, abilityName: string, index: number)
+    if not self.player then 
+        warn(self.abilities)
+        return self.abilities[toolName.."-"..abilityName.."-"..index].mindController
+    else
+        warn(`Cannot get mind controller for a player controlled entity.`)
+        return nil
+    end
 end
 
 -- TODO: Add error handling
@@ -32,14 +43,14 @@ function ServerAbilities:setupTool(tool)
     local asset = AssetsDealer.Get("Tools", name)
     local config = require(asset.Config)
 
-    self.abilities = {}
     for _, abilityConfig in config.abilities do
         local abilityName = abilityConfig.name
         local folder = AbiltiesFolder[abilityName]
         local serverAbility = folder:FindFirstChild("ServerAbility"..abilityName)
         if not serverAbility then return end
         serverAbility = require(serverAbility)
-        self.abilities[abilityName] = serverAbility.new(self.backpack.entity,tool,abilityConfig)
+        local identifier = tool.Name.."-"..abilityName.."-"..tool:GetAttribute("Index")
+        self.abilities[identifier] = serverAbility.new(self.backpack.entity,tool,abilityConfig)
     end
 end
 
@@ -48,6 +59,9 @@ function ServerAbilities:setup()
     for _, tool in self.backpack.tools:GetChildren() do
         self:setupTool(tool)
     end
+    self.backpack.events.ToolAdded:Connect(function(tool)
+        self:setupTool(tool)
+    end)
 end
 
 return ServerAbilities

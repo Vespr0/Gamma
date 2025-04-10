@@ -54,8 +54,7 @@ function ServerAnima:loadCharacter()
 	rig.Parent = game:GetService("ServerStorage"):WaitForChild("Temp")
 	rig.Humanoid.Health = rig.Humanoid.MaxHealth -- TODO: I have to do this, i have no fucking clue why
 
-	self.entity = ServerEntity.new(rig,self.player)
-	rig:SetAttribute("IsLocalPlayerInstance", true)
+	self.entity = ServerEntity.new(rig,self.player,"Blue")
 	self.events.EntityAdded:Fire(self.entity)
 
 	warn("Applied entityID attribute to player")

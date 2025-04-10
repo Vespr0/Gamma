@@ -2,7 +2,16 @@ return function()
 	local MobSpawner = require(script.Parent.Parent.Parent.Main.Mobs.MobSpawner)
 
 	for i = 1, 3 do
-		MobSpawner.Spawn("Noob",CFrame.new(0,50,i*2))
+		local _,mobEntity = MobSpawner.Spawn("HockeyMaskGuy", CFrame.new(0,50,i*2))
+
+		task.wait(10)
+		-- Fire MindController event for NPCs
+		task.spawn(function()
+			while true do
+				mobEntity.backpack.abilities:getMindController("Minigun", "Projectile", 1):Fire("Fire", mobEntity.root.CFrame.LookVector)
+				task.wait(.2) -- Fire every 2 seconds
+			end
+		end)
 	end
 
 	-- local ProjectileManager = require(game.ReplicatedStorage.Abilities.ProjectileManager)

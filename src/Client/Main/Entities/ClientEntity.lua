@@ -16,6 +16,8 @@ local Motor6DManager = require(script.Parent.Motor6DManager)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local ClientBackpack = require(script.Parent.Parent.Entities.ClientBackpack)
 local ClientMovement = require(script.Parent.Parent.Entities.ClientMovement)
+local ClientAppearance = require(script.Parent.ClientAppearance)
+local Recoil = require(script.Parent.Parent.Entities.Recoil)
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 ClientEntity.Instances = {}
@@ -33,7 +35,7 @@ function ClientEntity.new(rig: TypeRig.Rig)
 	local self = setmetatable(BaseEntity.new(rig,id), ClientEntity)
 
 	-- Store the instance linked to the current player character
-	self.isLocalPlayerInstance = rig:GetAttribute("IsLocalPlayerInstance") :: boolean
+	self.isLocalPlayerInstance = LocalPlayer.Character == rig :: boolean
 	if self.isLocalPlayerInstance then ClientEntity.LocalPlayerInstance = self end
 	
 	self:setup()
@@ -48,12 +50,14 @@ function ClientEntity.new(rig: TypeRig.Rig)
 end
 
 function ClientEntity:setup()
+	-- Initialize components in correct order, changing the order will result in errors
 	self:setupAnimations()
+	self:setupMovement()
+	self:setupBackpack()
+	self:setupAppearance()
 
 	self.Motor6DManager = Motor6DManager.new(self.rig)
-
-	self:setupBackpack()
-	self:setupMovement()
+	self.recoil = Recoil.new(self)
 
 	self.events.Died:Connect(function()
 		self:destroy()
@@ -79,8 +83,15 @@ function ClientEntity:setupBackpack()
 	print(self.backpack,self.isLocalPlayerInstance)
 end
 
+function ClientEntity:setupAppearance()
+	self.appearance = ClientAppearance.new(self)
+end
+
 function ClientEntity:destroy()
 	self.Motor6DManager:destroy()
+	if self.Recoil then
+		self.Recoil:destroy()
+	end
 
 	ClientEntity.Instances[tostring(self.id)] = nil
 	if self.isLocalPlayerInstance then ClientEntity.LocalPlayerInstance = nil end

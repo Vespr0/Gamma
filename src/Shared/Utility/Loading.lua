@@ -34,10 +34,9 @@ function Loading.LoadModules(folder,blacklist)
 	local descendants = folder:GetDescendants()
 	local modules = {}
 
-	-- Get all modules in the folder
+	-- Get all modules in the folder and its subfolders
 	for _,d in descendants do
 		if not d:IsA("ModuleScript") or (blacklist and table.find(blacklist, d)) then continue end
-
 		table.insert(modules,d)
 	end
 

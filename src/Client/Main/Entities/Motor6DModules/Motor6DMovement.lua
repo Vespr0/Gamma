@@ -63,7 +63,7 @@ end
 function Motor6DTilt.Connect(utility, rig: TypeRig.Rig)
     utility:checkMotors("RootJoint")
 
-    local trove = Trove.new()
+    local self = {}
 
     -- Initialize bias
     local initialBias = {
@@ -78,19 +78,19 @@ function Motor6DTilt.Connect(utility, rig: TypeRig.Rig)
 
     if not humanoid or not rootPart then
         warn("RunningSway: Missing Humanoid or RootPart in rig")
-        return trove
+        return self
     end
 
     -- Main update loop
-    trove:Add(RunService.Heartbeat:Connect(function(deltaTime)
+    self.connection = RunService.Heartbeat:Connect(function(deltaTime)
         local velocity = rootPart.Velocity
         local moveDirection, speed = calculateMoveDirection(velocity)
         local targetTilt = calculateTargetTilt(moveDirection, speed, rootPart.CFrame)
         
         updateBias(utility, targetTilt, deltaTime)
-    end))
+    end)
 
-    return trove
+    return self
 end
 
 return Motor6DTilt

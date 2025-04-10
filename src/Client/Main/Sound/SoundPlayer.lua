@@ -16,7 +16,8 @@ local playerGui = player:WaitForChild("PlayerGui")
 local activeSounds = {}
 
 -- Function to play a sound
-function SoundPlayer.PlaySound(directory: string, volume: number?, looped: boolean?,fadeInTime: number?)
+function SoundPlayer.PlaySound(directory: string, parent: Instance?, volume: number?, looped: boolean?,fadeInTime: number?)
+	parent = parent or playerGui
 	-- Fetch the sound instance using AssetsDealer
 	local sound = AssetsDealer.GetDir("Sounds", directory, "Clone")
 
@@ -28,7 +29,7 @@ function SoundPlayer.PlaySound(directory: string, volume: number?, looped: boole
 	-- Set sound properties
 	sound.Volume = fadeInTime and 0 or (volume or 1)
 	sound.Looped = looped or false
-	sound.Parent = playerGui
+	sound.Parent = parent
 
 	-- Play the sound
 	sound:Play()

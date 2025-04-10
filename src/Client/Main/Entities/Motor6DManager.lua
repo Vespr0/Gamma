@@ -19,8 +19,8 @@ local LocalPlayer = game:GetService("Players").LocalPlayer
 
 -- Types
 export type Bias = {
-    offset: CFrame,
-    angles: CFrame
+    offset: CFrame?,
+    angles: CFrame?
 }
 export type DualBias = {
     C0: Bias,
@@ -40,13 +40,20 @@ function Motor6DManager.new(rig: TypeRig.Rig)
     self.isLocalPlayerInstance = rig == LocalPlayer.Character
     self.motors = {}
     self.defaults = {}
+
     self.connections = {}
+    self.modules = {}
+    
     self.dualBiases = {} 
     self.trove = Trove.new()
 
     self:setup()
 
     return self
+end
+
+function Motor6DManager:getModule(moduleName: string)
+    return self.connections[moduleName]
 end
 
 function Motor6DManager:setup()
@@ -71,8 +78,10 @@ function Motor6DManager:setupMotors()
 end
 
 function Motor6DManager:connectMotorModules()
-    for _,module in Motor6DManager.Modules do
-        table.insert(self.connections,module.Connect(self,self.rig,self.motors))
+    for name,module in Motor6DManager.Modules do
+        local requiredModule = module.Connect(self,self.rig,self.motors)
+        self.connections[name] = requiredModule.connection
+        self.modules[name] = requiredModule
     end
 end
 
@@ -155,12 +164,20 @@ function Motor6DManager:step(deltaTime: number)
         local BiasC1 = CFrame.new()
         for biasName, dualBias: DualBias in self.dualBiases[motorName] do
             if dualBias.C0 then
-                BiasC0 += dualBias.C0.offset
-                BiasC0 *= dualBias.C0.angles
+                if dualBias.C0.offset then
+                    BiasC0 += dualBias.C0.offset
+                end
+                if dualBias.C0.angles then
+                    BiasC0 *= dualBias.C0.angles
+                end
             end
             if dualBias.C1 then
-                BiasC1 += dualBias.C1.offset
-                BiasC1 *= dualBias.C1.angles
+                if dualBias.C1.offset then
+                    BiasC1 += dualBias.C1.offset
+                end
+                if dualBias.C1.angles then
+                    BiasC1 *= dualBias.C1.angles
+                end
             end
         end        
 

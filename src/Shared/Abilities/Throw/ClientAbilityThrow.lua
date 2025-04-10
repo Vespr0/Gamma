@@ -3,7 +3,8 @@ local BaseAbility = require(ReplicatedStorage.Abilities.BaseAbility)
 local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
 local Signal = require(ReplicatedStorage.Packages.signal)
 local Highlighter = require(ReplicatedStorage.Utility.Highlighter)
-local Inputs = require(game:GetService("Players").LocalPlayer.PlayerScripts.Main.Input.Inputs):get()
+local Inputs = require(game:GetService("Players").LocalPlayer.PlayerScripts.Main.Input.Inputs)
+local ItemInput = Inputs.GetModule("Item")
 
 local ClientAbilityThrow = setmetatable({}, {__index = BaseAbility})
 ClientAbilityThrow.__index = ClientAbilityThrow
@@ -27,11 +28,9 @@ function ClientAbilityThrow:activate()
 end
 
 function ClientAbilityThrow:setupInputs()
-	Inputs.events.InputBegan:Connect(function(input)
+	ItemInput.BeganEvent:Connect(function(action)
 		if not self:checkInputConditions() then return end
-		
-		local activationInputs = self.abilityConfig.inputs.activate
-		if Inputs.IsValidInput(activationInputs, input) then
+		if action == "THROW" then
 			self:activate()
 		end
 	end)

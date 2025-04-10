@@ -24,6 +24,24 @@ Game.Tags = {
 Game.Gameplay = {
 	ChargeIncrement = 0.01
 }
+-- Teams
+Game.Teams = {
+	Red = {
+		Name = "Red",
+		PrimaryColor = Color3.fromRGB(215, 30, 0),
+		SecondaryColor = Color3.fromRGB(43, 30, 30)
+	},
+	Blue = {
+		Name = "Blue",
+		PrimaryColor = Color3.fromRGB(91, 109, 244),
+		SecondaryColor = Color3.fromRGB(35, 38, 53)
+	},
+	Neutral = {
+		Name = "Neutral",
+		PrimaryColor = Color3.fromRGB(230, 229, 229),
+		SecondaryColor = Color3.fromRGB(34, 34, 34)
+	}
+}
 -- Rig
 Game.RespawnTime = 3
 Game.Limbs = {

@@ -31,7 +31,7 @@ end
 function BaseClientAbility:checkInputConditions()
 	local dummyTool = self.entity.backpack:getDummyTool()
 	if not dummyTool then return false end
-		
+
 	if dummyTool:GetAttribute("ID") ~= self.tool:GetAttribute("ID") then return false end
 
 	return true
@@ -61,8 +61,21 @@ function BaseClientAbility:getFireEndPosition()
 	return fireEnd.WorldPosition
 end
 
+function BaseClientAbility:setupReplication()
+	-- Replication
+	self.Replicated = Signal.new()
+	AbilitiesMiddleware.ReadAbility:Connect(function(entityID: number,abilityName: string, toolIndex: number, ...)
+		if abilityName ~= self.name or toolIndex ~= self.tool:GetAttribute("Index") then return end
+		self.Replicated:Fire(...)
+	end)
+end
+
 function BaseClientAbility:setup()
-	self.animationPreamble = "Tool".."-"..self.tool:GetAttribute("ID").."-"..self.tool.Name
+	self.animationPreamble = "Tool".."-"..self.tool:GetAttribute("ID").."-"..self.tool.Name		
+	
+	-- Setup replication
+	self:setupReplication()
+
 	task.spawn(function()
 		local backpack, err = Loading.waitFor(function()
 			return self.entity.backpack
@@ -70,6 +83,16 @@ function BaseClientAbility:setup()
 
 		if not backpack then
 			warn("Failed to get backpack for ability:", err)
+			return
+		end
+
+		-- Wait for animator to be initialized
+		local animator, animatorErr = Loading.waitFor(function()
+			return self.entity.animator
+		end, 5)
+
+		if not animator then
+			warn("Failed to get animator for ability:", animatorErr)
 			return
 		end
 
@@ -82,6 +105,7 @@ function BaseClientAbility:setup()
 			if index ~= self.tool:GetAttribute("Index") then return end
 			self.events.Unequipped:Fire()
 		end))
+
 		-- Hold animation
 		assert(self.toolConfig.animations.hold, `Hold animation is missing from tool "{self.tool.Name}".`)
 		self:loadAnimation("Hold",self.toolConfig.animations.hold)

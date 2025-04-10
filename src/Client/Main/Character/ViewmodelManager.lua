@@ -44,6 +44,11 @@ local function destroyFakeTool(fakeTool)
 end
 
 function ViewmodelManager.new(entity: TypeEntity.ClientEntity)
+    if ViewmodelManager.Singleton then
+        warn("ViewmodelManager singleton instance already exists, destroying it")
+        ViewmodelManager.Singleton:destroy()
+        return
+    end
     assert(entity, "Entity is nil!")
 
     local self = setmetatable({}, ViewmodelManager)
@@ -318,6 +323,7 @@ function ViewmodelManager:destroy()
     if self.trove then
         self.trove:Destroy()
     end
+    ViewmodelManager.Singleton = nil
 end
 
 function ViewmodelManager.Init()
