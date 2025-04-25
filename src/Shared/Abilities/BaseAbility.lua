@@ -62,11 +62,23 @@ function BaseAbility:setup()
 end
 
 function BaseAbility:getCurrentFakeTool()
+	if not self.entity then warn("Entity not found") return nil end
+	if not self.entity.rig then warn("Entity rig not found") return nil end
 	return self.entity.rig:FindFirstChildOfClass("Tool")
 end
 
 function BaseAbility:getCurrentFakeToolHandle()
-	return self:getCurrentFakeTool().Model.Handle
+	local tool = self:getCurrentFakeTool()
+	if not tool then warn("Fake tool not found") return nil end
+	if not tool.Model then warn("Fake tool model not found") return nil end
+	return tool.Model.Handle
+end
+
+function BaseAbility:getCurrentFakeToolMuzzlePosition()
+	local handle = self:getCurrentFakeToolHandle()
+	if not handle then warn("Fake tool handle not found") return nil end
+	local muzzle = handle:FindFirstChild("Muzzle")
+	return muzzle.WorldPosition
 end
 
 function BaseAbility:readAction(func)

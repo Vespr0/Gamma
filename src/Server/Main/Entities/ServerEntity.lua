@@ -12,6 +12,7 @@ local Signal = require(ReplicatedStorage.Packages.signal)
 local Game = require(ReplicatedStorage.Utility.Game)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local ServerBackpack = require(script.Parent.ServerBackpack)
+local Ragdoll = require(script.Parent.Ragdoll)
 
 -- Variables
 ServerEntity.Instances = {}
@@ -49,8 +50,15 @@ function ServerEntity:setup()
 	-- self:setupPhysicsController()
 	self:setupBackpack()
 
+	-- Setup ragdoll system
+	self.ragdoll = Ragdoll.new(self)
+
 	self.events.Died:Connect(function()
-		self:destroy()
+		if self.ragdoll then
+			self.ragdoll:EnableRagdoll()
+		end
+		-- task.wait(5)
+		-- self:destroy()
 	end)
 
 	ServerEntity.Instances[self.id] = self

@@ -29,6 +29,9 @@ function BaseClientAbility.new(name: string, entity: TypeEntity.BaseEntity, tool
 end
 
 function BaseClientAbility:checkInputConditions()
+	if not self.entity then return false end
+	if not self.entity.backpack then return false end
+	
 	local dummyTool = self.entity.backpack:getDummyTool()
 	if not dummyTool then return false end
 
@@ -71,6 +74,9 @@ function BaseClientAbility:setupReplication()
 end
 
 function BaseClientAbility:setup()
+	if not self.entity then error("Entity is missing") end
+	if not self.entity.animator then error("Entity animator is missing") end
+
 	self.animationPreamble = "Tool".."-"..self.tool:GetAttribute("ID").."-"..self.tool.Name		
 	
 	-- Setup replication

@@ -41,7 +41,7 @@ function Recoil.new(entity)
     self.originalCFrame = CAMERA.CFrame
 
     -- Motor6DRecoil instance
-    self.motor6DRecoil = self.entity.Motor6DManager.modules["Motor6DRecoil"]
+    --self.motor6DRecoil = self.entity.Motor6DManager.modules["Motor6DRecoil"]
 
     -- Connect to entity death
     self.trove:Connect(self.entity.events.Died, function()
@@ -71,8 +71,8 @@ function Recoil:applyRecoil(vertical, horizontal)
     -- Fire event for other systems to use
     self.events.RecoilApplied:Fire(randomVertical, randomHorizontal)
 
-    -- print("Recoil: Found Recoil module, applying recoil", randomVertical)
-    self.motor6DRecoil:applyRecoil(randomVertical)
+    -- TODO:
+    -- self.motor6DRecoil:applyRecoil(randomVertical)
 end
 
 function Recoil:update(deltaTime)

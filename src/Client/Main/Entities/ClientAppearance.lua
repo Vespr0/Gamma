@@ -50,6 +50,18 @@ function ClientAppearance:updateTeamColors()
         bodyColors.RightLegColor3 = teamInfo.SecondaryColor
         bodyColors.TorsoColor3 = teamInfo.PrimaryColor
     end
+
+    -- Update the color of instances with the "TeamColored" attribute
+    for _, instance in self.rig:GetDescendants() do
+        local teamColor = instance:GetAttribute("TeamColor")
+        if teamColor then
+            if teamColor == "Primary" then
+                instance.Color = teamInfo.PrimaryColor
+            elseif teamColor == "Secondary" then
+                instance.Color = teamInfo.SecondaryColor
+            end
+        end
+    end
 end
 
 function ClientAppearance:destroy()

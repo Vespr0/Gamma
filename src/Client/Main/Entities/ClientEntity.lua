@@ -18,6 +18,7 @@ local ClientBackpack = require(script.Parent.Parent.Entities.ClientBackpack)
 local ClientMovement = require(script.Parent.Parent.Entities.ClientMovement)
 local ClientAppearance = require(script.Parent.ClientAppearance)
 local Recoil = require(script.Parent.Parent.Entities.Recoil)
+local ClientTilting = require(script.Parent.ClientTilting)
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 ClientEntity.Instances = {}
@@ -58,6 +59,7 @@ function ClientEntity:setup()
 
 	self.Motor6DManager = Motor6DManager.new(self.rig)
 	self.recoil = Recoil.new(self)
+	self.tilting = ClientTilting.new(self)
 
 	self.events.Died:Connect(function()
 		self:destroy()
@@ -66,6 +68,7 @@ end
 
 function ClientEntity:setupMovement()
 	self.movement = ClientMovement.new(self,self.isLocalPlayerInstance)
+	-- no longer overriding default movement; just enhanced air control via ClientJumping
 end
 
 function ClientEntity:setupAnimations()

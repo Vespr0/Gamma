@@ -4,11 +4,9 @@ Movement.__index = Movement
 -- Services
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
+local _TweenService = game:GetService("TweenService")
 -- Modules
-local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
 local Trove = require(ReplicatedStorage.Packages.trove)
-local Game = require(ReplicatedStorage.Utility.Game)
 local Lerp = require(ReplicatedStorage.Utility.Lerp)
 local MovementMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Movement")
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
@@ -18,6 +16,7 @@ local CrouchingInput = Inputs.GetModule("Crouching")
 
 local SPRINTING_BOOST = 5
 local CROUCHING_PENALTY = 8
+local AIRBORNE_PUSH = 30
 local TRANSITION_SPEED = 3
 
 function Movement.new(entity,isLocalPlayerInstance)
@@ -97,6 +96,18 @@ function Movement:setupSprinting()
         local crouchGoal = self.isCrouching and -CROUCHING_PENALTY or 0
         local crouchLerp = Lerp(self.boosts.WalkSpeed.Crouching, crouchGoal, deltaTime * TRANSITION_SPEED)
         self.boosts.WalkSpeed.Crouching = math.clamp(crouchLerp,-CROUCHING_PENALTY,0)
+        
+        -- Airborne upward push
+        local state = self.entity.humanoid:GetState()
+        if state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Jumping then
+            local root = self.entity.rig:FindFirstChild("HumanoidRootPart")
+            if root then
+                local vel = root.AssemblyLinearVelocity
+                -- apply push per second to avoid exponential growth
+                local newY = vel.Y + AIRBORNE_PUSH * deltaTime
+                root.AssemblyLinearVelocity = Vector3.new(vel.X, newY, vel.Z)
+            end
+        end
     end))
 end
 

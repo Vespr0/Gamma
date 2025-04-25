@@ -19,8 +19,8 @@ local LocalPlayer = game:GetService("Players").LocalPlayer
 
 -- Types
 export type Bias = {
-    offset: CFrame?,
-    angles: CFrame?
+    offset: CFrame,
+    angles: CFrame
 }
 export type DualBias = {
     C0: Bias,
@@ -29,8 +29,12 @@ export type DualBias = {
 
 -- Functions
 local function lerpBias(current: Bias, target: Bias, smoothness: number)
-    current.offset = current.offset:Lerp(target.offset, smoothness)
-    current.angles = current.angles:Lerp(target.angles, smoothness)
+    if current.offset then
+        current.offset = current.offset:Lerp(target.offset, smoothness)
+    end
+    if current.angles then
+        current.angles = current.angles:Lerp(target.angles, smoothness)
+    end
 end
 
 function Motor6DManager.new(rig: TypeRig.Rig)
@@ -68,11 +72,13 @@ end
 function Motor6DManager:setupMotors()
     for _,motor in self.rig:GetDescendants() do
         if motor:IsA("Motor6D") then
+            warn(motor.Name)
             self.motors[motor.Name] = motor
             self.dualBiases[motor.Name] = {}
             self.defaults[motor.Name] = {}
             self.defaults[motor.Name].C0 = motor.C0
             self.defaults[motor.Name].C1 = motor.C1
+            -- TODO: Potentially troublesome as based on the state of the rig the defaults can be different.
         end
     end
 end
@@ -86,18 +92,13 @@ function Motor6DManager:connectMotorModules()
 end
 
 function Motor6DManager:addBias(motorName: string, biasName: string, biasType: "C0" | "C1", bias: Bias, smoothness: number)
+    -- Exit if rig is destroyed
+    if not EntityUtility.IsAlive(self.rig) then return end
     -- Prevent adding bias if it's already active or being removed
-    if self.dualBiases[motorName] and self.dualBiases[motorName][biasName] and self.dualBiases[motorName][biasName].status ~= "removing" then
-        return
-    end
+    assert(self.dualBiases[motorName], `Motor6D "{motorName}" is nil`)
 
     -- Remove any existing bias to reset state
     self:removeBias(motorName, biasName)
-
-    -- Ensure biases array exists
-    if not self.dualBiases[motorName] then
-        self.dualBiases[motorName] = {}
-    end
 
     self.dualBiases[motorName][biasName] = { status = "active" } -- Set as active
 
@@ -121,6 +122,8 @@ function Motor6DManager:addBias(motorName: string, biasName: string, biasType: "
 end
 
 function Motor6DManager:removeBias(motorName: string, biasName: string, smoothness: number)
+    -- Exit if rig is destroyed
+    if not EntityUtility.IsAlive(self.rig) then return end
     -- Exit if there is no bias or if already removing
     if not self.dualBiases[motorName] or not self.dualBiases[motorName][biasName] or self.dualBiases[motorName][biasName].status == "removing" then
         return
@@ -155,6 +158,8 @@ function Motor6DManager:removeBias(motorName: string, biasName: string, smoothne
 end
 
 function Motor6DManager:step(deltaTime: number)
+    -- Skip stepping if rig is destroyed
+    if not EntityUtility.IsAlive(self.rig) then return end
     for motorName,motor in self.motors do
         -- Set defaults first
         motor.C0 = self.defaults[motorName].C0
@@ -199,7 +204,7 @@ end
 
 function Motor6DManager:destroy()
     for _,connection in self.connections do
-        connection:Destroy()
+        connection:Disconnect()
     end
     self.trove:Destroy()
     table.clear(self)

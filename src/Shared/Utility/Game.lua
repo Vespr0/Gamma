@@ -36,6 +36,11 @@ Game.Teams = {
 		PrimaryColor = Color3.fromRGB(91, 109, 244),
 		SecondaryColor = Color3.fromRGB(35, 38, 53)
 	},
+	Yellow = {
+		Name = "Neutral",
+		PrimaryColor = Color3.fromRGB(255, 209, 24),
+		SecondaryColor = Color3.fromRGB(27, 23, 15)
+	},
 	Neutral = {
 		Name = "Neutral",
 		PrimaryColor = Color3.fromRGB(230, 229, 229),

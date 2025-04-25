@@ -8,6 +8,8 @@ function Loading.LoadAssetsDealer()
 	require(ReplicatedStorage.AssetsDealer).Init()
 end
 
+local GLOBAL_TIMEOUT_LIMIT = 10
+
 Loading.Initialized = {}
 
 -- Utility function to wait for a resource with timeout
@@ -48,10 +50,10 @@ function Loading.LoadModules(folder,blacklist)
 		repeat 
 			task.wait(1) 
 			globalTimeout += 1 
-		until globalTimeout > 5 or loaded
+		until globalTimeout > GLOBAL_TIMEOUT_LIMIT or loaded
 
 		if not loaded then
-			error("❌ Loading timed out at "..currentModule.Name)
+			error("❌ Loading timed out at "..currentModule.Name.." after "..globalTimeout.." seconds")
 		end
     end)
 

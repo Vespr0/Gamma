@@ -5,6 +5,8 @@ local Entity = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Game = require(ReplicatedStorage.Utility.Game)
 
+-- TODO: The function names here are pretty confusing, it gets the "Entity" which is actually a rig.
+
 -- Healthy means with a humanoid and health above 0
 function Entity.IsHealthy(rig)
 	if not rig:FindFirstChild("Humanoid") then return false end

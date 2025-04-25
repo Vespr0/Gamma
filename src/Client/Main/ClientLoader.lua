@@ -8,7 +8,7 @@ local Game = require(ReplicatedStorage.Utility.Game)
 local Loading = require(ReplicatedStorage.Utility.Loading)
 local Conch = require(ReplicatedStorage.Packages.conch)
 local ConchUi = require(ReplicatedStorage.Packages.conch_ui)
-local ProjectileManager = require(ReplicatedStorage.Abilities.ProjectileManager)
+
 -- Variables
 local context = ""
 local progress = 0

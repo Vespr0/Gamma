@@ -7,7 +7,7 @@ realm = "shared"
 [dependencies]
 signal = "sleitnick/signal@^1"
 TableUtil = "sleitnick/table-util@^1"
-fusion = "mattschrubb/fusion@1.2.5"
+fusion = "acecateer/fusion@0.3.1"
 trove = "cody-nelson/trove@0.0.1"
 
 # Dev
@@ -24,3 +24,5 @@ partcache = "andremhpra/partcache@1.0.0"
 
 # Spring
 spring = "nightcycle/spring@1.0.0"
+shapecasthitbox = "teamswordphin/shapecasthitbox@0.1.5"
+

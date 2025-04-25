@@ -10,8 +10,8 @@ local Spring = require(ReplicatedStorage.Packages.spring)
 
 -- Constants
 local SPRING_CONFIG = {
-    frequency = 15,
     damping = 0.8,
+    frequency = 15
 }
 local ARM_RECOIL_MULTIPLIER = 2 -- Increased for more noticeable movement
 
@@ -56,29 +56,25 @@ function RecoilMotor:update(deltaTime)
     -- Update spring
     self.verticalSpring:Step(deltaTime)
     
-    -- Get spring position
     local verticalOffset = self.verticalSpring:Get()
     
     local armVertical = verticalOffset * ARM_RECOIL_MULTIPLIER
     
     local lookVector = self.root.CFrame.LookVector
+    local armTransform = lookVector * armVertical
     
-    -- Create arm transform that moves along look vector
-    local armTransform = CFrame.new(lookVector * armVertical)
-    
-    -- Apply to both arms
     self.manager:addBias("Right Shoulder", "Recoil", "C0", {
-        offset = armTransform.Position
+        offset = armTransform
     })
     
     self.manager:addBias("Left Shoulder", "Recoil", "C0", {
-        offset = armTransform.Position
+        offset = armTransform
     })
 end
 
 function RecoilMotor:applyRecoil(vertical)
     -- Add force to spring by setting its goal
-    self.verticalSpring:Set(self.verticalSpring:Get() + vertical * 10) -- Increased multiplier for more noticeable recoil
+    self.verticalSpring:Set(self.verticalSpring:Get() + vertical) -- Increased multiplier for more noticeable recoil
 end
 
-return RecoilMotor 
+return RecoilMotor

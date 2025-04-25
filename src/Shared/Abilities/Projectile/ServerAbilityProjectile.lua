@@ -8,7 +8,7 @@ local Remotes = ReplicatedStorage.Remotes
 local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
 -- Modules
 local DamageManager = require(ServerScriptService.Main.Abilities.DamageManager)
-local ProjectileManager = require(ReplicatedStorage.Abilities.ProjectileManager)
+-- local ProjectileManager = require(ReplicatedStorage.Abilities.ProjectileManager)
 -- Class
 local ServerAbilityProjectile = setmetatable({}, {__index = BaseServerAbility})
 ServerAbilityProjectile.__index = ServerAbilityProjectile
@@ -23,18 +23,55 @@ function ServerAbilityProjectile.new(entity,tool,config)
 	return self
 end
 
-
-function ServerAbilityProjectile:fire(direction: Vector3)
-	for _, player in Players:GetChildren() do
-		if player == self.entity.player then continue end -- Skip the player that controls this entity
-		self:sendAction(player, "Fire", direction)
+function ServerAbilityProjectile:verifyOrigin(origin: Vector3): boolean
+	local distance = (origin - self.entity.rig.Head.Position).Magnitude
+	if distance > 3 then
+		warn("Origin is too far from the player.")
+		return false
 	end
+
+	return true
 end
 
-function ServerAbilityProjectile:processAction(actionName: string, arg1: any)
+
+function ServerAbilityProjectile:fire(direction: Vector3, origin: Vector3,clientTimestamp: number)
+
+	-- TODO: Verify Origin
+
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local GammaCast = require(ReplicatedStorage.Abilities.Projectile.GammaCast)
+    local entityID = self.entity.id
+    local player = self.entity.player
+    local typeName = self.abilityConfig.projectileType or "Bullet"
+    local modifiers = self.abilityConfig.projectileModifiers or nil
+
+    local result = GammaCast.CastServer(player, typeName, origin, direction, clientTimestamp, modifiers)
+    -- Apply damage using DamageManager if SimulationResult indicates a hit
+    if result and result.Rig then
+        local hitInstance = result.Rig
+        local hitRig = hitInstance
+        while hitRig and not hitRig:GetAttribute("ID") do
+            hitRig = hitRig.Parent
+        end
+        if hitRig then
+            local targetEntityID = hitRig:GetAttribute("ID")
+            local damageAmount = self.abilityConfig.damage or 0
+            DamageManager.Damage(targetEntityID, entityID, damageAmount)
+        end
+    end
+    for _, other in ipairs(Players:GetPlayers()) do
+        if other ~= player then
+            GammaCast.RemoteEvent:FireClient(other, entityID, typeName, origin, direction, modifiers)
+        end
+    end
+end
+
+function ServerAbilityProjectile:processAction(actionName: string, arg1: any, arg2: any, arg3: any)
 	if actionName == "Fire" then
 		local direction = arg1
-		self:fire(direction)
+		local origin = arg2
+		local clientTimestamp = arg3
+		self:fire(direction, origin, clientTimestamp)
 	end
 end
 

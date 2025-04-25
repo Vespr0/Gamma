@@ -10,8 +10,10 @@ local Player = Players.LocalPlayer
 local BaseClientAbility = require(Player.PlayerScripts.Main.Abilities.BaseClientAbility)
 local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
 local Inputs = require(Player.PlayerScripts.Main.Input.Inputs):get()
-local ProjectileManager = require(script.Parent.Parent.ProjectileManager)
-local SoundPlayer = require(Player.PlayerScripts.Main.Sound.SoundPlayer)
+-- local ProjectileManager = require(script.Parent.Parent.ProjectileManager)
+local SoundManager = require(Player.PlayerScripts.Main.Sound.SoundManager)
+local BulletHoleVFX = require(Player.PlayerScripts.Main.Visuals.VFXManager).GetModule("BulletHole")
+local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
 
 local ClientAbilityProjectile = setmetatable({}, {__index = BaseClientAbility})
 ClientAbilityProjectile.__index = ClientAbilityProjectile
@@ -19,6 +21,7 @@ ClientAbilityProjectile.__index = ClientAbilityProjectile
 function ClientAbilityProjectile.new(entity, tool, config)
 	local self = setmetatable(BaseClientAbility.new(ABILITY_NAME, entity, tool, config) :: TypeAbility.BaseClientAbility, ClientAbilityProjectile)
 
+    print(0)
 	self:setup()
 
     self.lastFireTime = os.clock()
@@ -26,41 +29,124 @@ function ClientAbilityProjectile.new(entity, tool, config)
 	return self
 end
 
-function ClientAbilityProjectile:fire(direction: Vector3)
+function ClientAbilityProjectile:playFireSound()
+    -- Handle continuous and one-shot fire sounds
+    if self.abilityConfig.continuousFire then
+        -- Looping weapon
+        if self.fireSound and self.fireSound.Playing then return end
+        if self.fireSound then SoundManager.StopSound(self.fireSound) end
+        self.fireSound = SoundManager.New(self.abilityConfig.sound, self:getCurrentFakeToolHandle(), "Effects")
+        SoundManager.Play(self.fireSound, 0.4, true, 0.1)
+        self.fireSound.RollOffMaxDistance = 100
+        self.fireSound.RollOffMinDistance = 20
+        return
+    end
+
+    -- One-shot weapon: play fresh sound in PlayerGui
+    if self.fireSound then
+        SoundManager.StopSound(self.fireSound)
+        self.fireSound = nil
+    end
+    -- Create and play one-shot sound under PlayerGui
+    local parent = Player:WaitForChild("PlayerGui")
+    local newSound = SoundManager.New(self.abilityConfig.sound, parent, "Effects")
+    SoundManager.Play(newSound, 0.4)
+    newSound.RollOffMaxDistance = 100
+    newSound.RollOffMinDistance = 20
+    return
+end
+
+function ClientAbilityProjectile:processHit(result)
+    warn("Processing hit:", result)
+    local position = result.Position
+    local normal = result.Normal
+    local instance = result.Instance
+
+    if not instance then return end
+
+    BulletHoleVFX:play(instance, position, normal)
+end
+
+function ClientAbilityProjectile:getBiasedDirection(direction: Vector3)
     direction = direction or workspace.CurrentCamera.CFrame.LookVector
-
-    if not self.abilityConfig.continuousFire then
-        SoundPlayer.PlaySound(self.abilityConfig.sound,self:getCurrentFakeToolHandle(), 0.5)
-    end
-
-    -- Apply recoil
-    self.entity.recoil:applyRecoil(self.abilityConfig.recoil.vertical, self.abilityConfig.recoil.horizontal)
-
+    local cframe = self.entity.root.CFrame
     local spread = self.abilityConfig.spread
-    local root = self.entity.root
-    local biasedDirection = direction +
-        root.CFrame.RightVector * math.random(-spread, spread)/100 +
-        root.CFrame.UpVector * math.random(-spread, spread)/100
-    
-    local projectileConfig = self.abilityConfig.projectileConfig
-    projectileConfig.Origin = self:getCurrentFakeToolHandle().Position
-    projectileConfig.Direction = biasedDirection
-    projectileConfig.RaycastBlacklist = {self.entity.rig}
 
-    if self.entity.isLocalPlayerInstance then
-        table.insert(projectileConfig.RaycastBlacklist, workspace.CurrentCamera)
+    -- Use a seed thats keeps spread consistent with other clients.
+    local random = Random.new(workspace:GetServerTimeNow())
+
+    local function getSpread() 
+        return random:NextInteger(-spread, spread)/100
+    end
+    local horizontalBias = getSpread() 
+    local verticalBias = getSpread() 
+
+    return direction +
+        cframe.RightVector * horizontalBias +
+        cframe.UpVector * verticalBias
+end
+
+function ClientAbilityProjectile:getOrigin()
+    local camera = workspace.CurrentCamera
+    return camera.CFrame.Position
+end
+
+function ClientAbilityProjectile:getDirection()
+    return workspace.CurrentCamera.CFrame.LookVector
+end
+
+function ClientAbilityProjectile:fire(direction)
+    self:playFireSound()
+
+    if self.abilityConfig.recoil then
+        self.entity.recoil:applyRecoil(self.abilityConfig.recoil.vertical, self.abilityConfig.recoil.horizontal)
     end
 
-    projectileConfig.SourceEntityID = self.entity.id
-    projectileConfig.Damage = self.abilityConfig.damage or 10
-    projectileConfig.ClientReplicationBlacklist = {Player.UserId}
+    -- local root = self.entity.root
+    
+    -- local muzzlePosition = self:getCurrentFakeToolMuzzlePosition()
 
-    ProjectileManager.Dynamic(projectileConfig)
+    -- Step 1: Raycast from the camera to determine the aim point
+    -- local rayOrigin = camera.CFrame.Position
+    -- local rayDirection = camera.CFrame.LookVector * 1000 -- cast far
+    -- local raycastParams = RaycastParams.new()
+    -- raycastParams.FilterDescendantsInstances = {self.entity.rig}
+    -- raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+
+    -- By default raycast to the camera direction to get the direction to shoot at whilist 
+    -- keeping the origin at the muzzle position (no need to shoot from the camera position)
+    -- if not direction then
+    --     local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+    --     local targetPoint = raycastResult and raycastResult.Position or (rayOrigin + rayDirection)
+    --     direction = (targetPoint - muzzlePosition).Unit
+    -- end
+    local position = self:getOrigin()
+    direction = direction or self:getDirection()
+    local biasedDirection = direction --self:getBiasedDirection(direction)
+
+    local projectileConfig = self.abilityConfig.projectileConfig
+    projectileConfig.origin = position
+    projectileConfig.direction = biasedDirection
+    projectileConfig.raycastBlacklist = {self.entity.rig}
+    if self.entity.isLocalPlayerInstance then
+        table.insert(projectileConfig.raycastBlacklist, workspace.CurrentCamera)
+    end
+    projectileConfig.sourceEntityID = self.entity.id
+    projectileConfig.damage = self.abilityConfig.damage or 10
+    projectileConfig.clientReplicationBlacklist = {Player.UserId}
+
+    -- Fire using GammaCast
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local GammaCast = require(ReplicatedStorage.Abilities.Projectile.GammaCast)
+    local typeName = self.abilityConfig.projectileType or "Bullet"
+    local origin = position
+    local modifiers = self.abilityConfig.projectileModifiers or nil
+    GammaCast.CastClient(self.entity.id, typeName, origin, biasedDirection, modifiers)
 end
 
 function ClientAbilityProjectile:setupInputs()
     self.isFiring = false
-    self.currentSound = nil
+    self.fireSound = nil
 
     -- Input began handler
     self.trove:Add(Inputs.events.ProcessedInputBegan:Connect(function(input)
@@ -68,9 +154,6 @@ function ClientAbilityProjectile:setupInputs()
 
         if Inputs.IsValidInput(self.abilityConfig.inputs.activate, input) then
             self.isFiring = true
-            if self.abilityConfig.continuousFire then
-                self.currentSound = SoundPlayer.PlaySound(self.abilityConfig.sound, self:getCurrentFakeToolHandle(), 0.5, true, 0.3)
-            end
         end
     end))
 
@@ -80,11 +163,15 @@ function ClientAbilityProjectile:setupInputs()
 
         if self.isFiring and Inputs.IsValidInput(self.abilityConfig.inputs.activate, input) then
             self.isFiring = false
-            if self.abilityConfig.continuousFire and self.currentSound then
-                SoundPlayer.FadeOut(self.currentSound, 0.2)
-            end
         end
     end))
+end
+
+function ClientAbilityProjectile:replicateFire()
+    local direction = self:getDirection()
+    local origin = self:getOrigin()
+    local clientTimestamp = workspace:GetServerTimeNow()
+    self:sendAction("Fire", direction, origin, clientTimestamp)
 end
 
 function ClientAbilityProjectile:trigger(replicate: boolean, direction: Vector3)
@@ -92,8 +179,9 @@ function ClientAbilityProjectile:trigger(replicate: boolean, direction: Vector3)
     self:heat()
     self:fire(direction)
     if replicate then
-        self:sendAction("Fire", workspace.CurrentCamera.CFrame.LookVector)
+        self:replicateFire()
     end
+    self.lastFireTime = os.clock()
 end
 
 
@@ -104,8 +192,20 @@ function ClientAbilityProjectile:setup()
     -- Tool unequipped handler
     self.trove:Add(self.events.Unequipped:Connect(function()
         self.isFiring = false
-        if self.currentSound then
-            SoundPlayer.FadeOut(self.currentSound, 0.2)
+        if self.fireSound then
+            SoundManager.FadeOut(self.fireSound, 0.2)
+        end
+    end))
+
+    -- Sound stop handler
+    self.trove:Add(RunService.RenderStepped:Connect(function()
+        if not self.fireSound then return end
+        if not self.abilityConfig.continuousFire then return end
+        if not self.fireSound.Playing then return end
+
+        if os.clock()-self.lastFireTime > self.abilityConfig.cooldownDuration+0.2 then 
+            -- Stop sound if it's not firing
+            SoundManager.FadeOut(self.fireSound, 0.2)
         end
     end))
 
@@ -125,8 +225,8 @@ function ClientAbilityProjectile:setup()
 end
 
 function ClientAbilityProjectile:destroy()
-    if self.currentSound then
-        self.currentSound:Destroy()
+    if self.fireSound then
+        self.fireSound:Destroy()
     end
 	self:destroySub()
 end

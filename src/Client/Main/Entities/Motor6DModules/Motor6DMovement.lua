@@ -10,10 +10,10 @@ local Trove = require(ReplicatedStorage.Packages.trove)
 local Lerp = require(ReplicatedStorage.Utility.Lerp)
 
 -- Constants
-local BIAS_NAME = "Tilt"
+local BIAS_NAME = "Leaning"
 local SMOOTHNESS = 10
 local VELOCITY_THRESHOLD = 0.1
-local MAX_TILT = math.rad(15)
+local MAX_LEANING = math.rad(15)
 local MAX_SPEED = 20
 
 local function calculateMoveDirection(velocity: Vector3): (Vector3, number)
@@ -24,7 +24,7 @@ local function calculateMoveDirection(velocity: Vector3): (Vector3, number)
         return horizontalVelocity.Unit, speed
     end
     
-    return Vector3.new(0, 0, 0), 0
+    return Vector3.zero, 0
 end
 
 local function calculateTargetTilt(moveDirection: Vector3, speed: number, primaryPartCFrame: CFrame): number
@@ -39,8 +39,8 @@ local function calculateTargetTilt(moveDirection: Vector3, speed: number, primar
         local tiltDirection = dotProduct > 0 and 1 or -2
 
         -- Calculate the tilt based on the speed and direction
-        local tilt = (speed / MAX_SPEED) * MAX_TILT * tiltDirection
-        return math.clamp(tilt, -MAX_TILT, MAX_TILT)
+        local tilt = (speed / MAX_SPEED) * MAX_LEANING * tiltDirection
+        return math.clamp(tilt, -MAX_LEANING, MAX_LEANING)
     end
     return 0
 end
@@ -67,7 +67,7 @@ function Motor6DTilt.Connect(utility, rig: TypeRig.Rig)
 
     -- Initialize bias
     local initialBias = {
-        offset = Vector3.new(),
+        offset = Vector3.zero,
         angles = CFrame.Angles(0, 0, 0)
     }
     utility:addBias("RootJoint", BIAS_NAME, "C0", initialBias, SMOOTHNESS)

@@ -29,7 +29,6 @@ end
 
 function ServerAbilities:getMindController(toolName: string, abilityName: string, index: number)
     if not self.player then 
-        warn(self.abilities)
         return self.abilities[toolName.."-"..abilityName.."-"..index].mindController
     else
         warn(`Cannot get mind controller for a player controlled entity.`)

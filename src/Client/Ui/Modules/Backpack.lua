@@ -60,6 +60,8 @@ function Backpack.InitUi(ui)
             local tween = TweenService:Create(inner, TweenInfo.new(0.3), goal)
             tween:Play()
         end
+
+        lastFocusedIndex = nil
 	end
 
 	local function focusSlot(_,index)
@@ -68,7 +70,7 @@ function Backpack.InitUi(ui)
         local slot = getSlot(index)
         if slot then
             local inner = slot.Inner
-            local goal = {Position = UDim2.new(0.5, 0, 0.5, -5)}
+            local goal = {Position = UDim2.new(0.5, 0, 0.5, -10)}
             local tween = TweenService:Create(inner, TweenInfo.new(0.2), goal)
             tween:Play() 
         end
