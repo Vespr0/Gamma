@@ -12,8 +12,9 @@ local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
 local Inputs = require(Player.PlayerScripts.Main.Input.Inputs):get()
 -- local ProjectileManager = require(script.Parent.Parent.ProjectileManager)
 local SoundManager = require(Player.PlayerScripts.Main.Sound.SoundManager)
-local BulletHoleVFX = require(Player.PlayerScripts.Main.Visuals.VFXManager).GetModule("BulletHole")
+local BulletHoleVFX = require(Player.PlayerScripts.Main.Visual.VFXManager).GetModule("BulletHole")
 local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
+local Recoil = require(Player.PlayerScripts.Main.Player.Recoil):get()
 
 local ClientAbilityProjectile = setmetatable({}, {__index = BaseClientAbility})
 ClientAbilityProjectile.__index = ClientAbilityProjectile
@@ -86,22 +87,30 @@ function ClientAbilityProjectile:getBiasedDirection(direction: Vector3)
         cframe.UpVector * verticalBias
 end
 
+-- TODO: Use camera controller
 function ClientAbilityProjectile:getOrigin()
-    local camera = workspace.CurrentCamera
-    return camera.CFrame.Position
+    if self.entity.isLocalPlayerInstance then
+        local camera = workspace.CurrentCamera
+        return camera.CFrame.Position
+    else
+        return self.entity.rig.Head.Position
+    end
 end
 
 function ClientAbilityProjectile:getDirection()
-    return workspace.CurrentCamera.CFrame.LookVector
+    if self.entity.isLocalPlayerInstance then
+        return workspace.CurrentCamera.CFrame.LookVector
+    else
+        return self.entity.root.CFrame.LookVector
+    end
 end
 
 function ClientAbilityProjectile:fire(direction)
     self:playFireSound()
 
     if self.abilityConfig.recoil then
-        self.entity.recoil:applyRecoil(self.abilityConfig.recoil.vertical, self.abilityConfig.recoil.horizontal)
+        Recoil:applyRecoil(self.abilityConfig.recoil.vertical, self.abilityConfig.recoil.horizontal)
     end
-
     -- local root = self.entity.root
     
     -- local muzzlePosition = self:getCurrentFakeToolMuzzlePosition()
@@ -121,12 +130,12 @@ function ClientAbilityProjectile:fire(direction)
     --     direction = (targetPoint - muzzlePosition).Unit
     -- end
     local position = self:getOrigin()
-    direction = direction or self:getDirection()
-    local biasedDirection = direction --self:getBiasedDirection(direction)
+    local clientDirection = self:getBiasedDirection(self:getDirection()) 
+    direction = direction or clientDirection
 
     local projectileConfig = self.abilityConfig.projectileConfig
     projectileConfig.origin = position
-    projectileConfig.direction = biasedDirection
+    projectileConfig.direction = direction
     projectileConfig.raycastBlacklist = {self.entity.rig}
     if self.entity.isLocalPlayerInstance then
         table.insert(projectileConfig.raycastBlacklist, workspace.CurrentCamera)
@@ -141,7 +150,9 @@ function ClientAbilityProjectile:fire(direction)
     local typeName = self.abilityConfig.projectileType or "Bullet"
     local origin = position
     local modifiers = self.abilityConfig.projectileModifiers or nil
-    GammaCast.CastClient(self.entity.id, typeName, origin, biasedDirection, modifiers)
+    GammaCast.CastClient(self.entity.id, typeName, origin, direction, modifiers)
+
+    return direction
 end
 
 function ClientAbilityProjectile:setupInputs()
@@ -167,19 +178,18 @@ function ClientAbilityProjectile:setupInputs()
     end))
 end
 
-function ClientAbilityProjectile:replicateFire()
-    local direction = self:getDirection()
+function ClientAbilityProjectile:sendFire(biasedDirection: Vector3)
     local origin = self:getOrigin()
     local clientTimestamp = workspace:GetServerTimeNow()
-    self:sendAction("Fire", direction, origin, clientTimestamp)
+    self:sendAction("Fire", biasedDirection, origin, clientTimestamp)
 end
 
-function ClientAbilityProjectile:trigger(replicate: boolean, direction: Vector3)
+function ClientAbilityProjectile:trigger(sendToServer: boolean, direction: Vector3)
     if self:isHot() then return end
     self:heat()
-    self:fire(direction)
-    if replicate then
-        self:replicateFire()
+    local biasedDirection = self:fire(direction)
+    if sendToServer then
+        self:sendFire(biasedDirection)
     end
     self.lastFireTime = os.clock()
 end

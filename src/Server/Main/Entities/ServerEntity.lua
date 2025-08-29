@@ -1,4 +1,3 @@
---!strict
 -- Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,7 +11,7 @@ local Signal = require(ReplicatedStorage.Packages.signal)
 local Game = require(ReplicatedStorage.Utility.Game)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local ServerBackpack = require(script.Parent.ServerBackpack)
-local Ragdoll = require(script.Parent.Ragdoll)
+local Ragdoll = require(ReplicatedStorage.Utility.Ragdoll)
 
 -- Variables
 ServerEntity.Instances = {}
@@ -57,11 +56,10 @@ function ServerEntity:setup()
 		if self.ragdoll then
 			self.ragdoll:EnableRagdoll()
 		end
-		-- task.wait(5)
-		-- self:destroy()
+		self:destroy()
 	end)
 
-	ServerEntity.Instances[self.id] = self
+	ServerEntity.Instances[tostring(self.id)] = self
 	CollectionService:AddTag(self.rig,Game.Tags.Entity)	
 	ServerEntity.GlobalAdded:Fire(self)
 end

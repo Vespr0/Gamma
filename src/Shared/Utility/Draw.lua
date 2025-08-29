@@ -101,7 +101,7 @@ function Draw.ray(origin, direction, color, parent, meshDiameter, diameter)
 	part.Shape = Enum.PartType.Cylinder
 	part.Size = Vector3.new(diameter, direction.Magnitude, diameter)
 	part.TopSurface = Enum.SurfaceType.Smooth
-	part.Transparency = 0.5
+	part.Transparency = 1
 
 	local rotatedPart = Instance.new("Part")
 	rotatedPart.Name = "RotatedPart"

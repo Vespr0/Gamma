@@ -31,16 +31,8 @@ function GammaCast.CastClient(authorEntityID: number, typeName: string, origin: 
 end
 
 -- Expects player and clientTimestamp from the RemoteEvent handler
-function GammaCast.CastServer(player: Player, typeName: string, origin: Vector3, direction: Vector3, clientTimestamp: number, modifiers: { [string]: any }?)
+function GammaCast.CastServer(authorEntityID: number, typeName: string, origin: Vector3, direction: Vector3, clientTimestamp: number, modifiers: { [string]: any }?)
     if not IS_SERVER then return end
-
-    -- TODO: Add validation for clientTimestamp if needed (e.g., prevent future timestamps)
-    
-    local authorEntityID = EntityUtility.GetEntityIDFromPlayer(player) -- Get entity ID from player
-    if not authorEntityID then 
-        warn("GammaCast.CastServer: Could not get entity ID for player", player)
-        return 
-    end
 
     -- Pass clientTimestamp to Simulation.new
     local simulation = Simulation.new(authorEntityID, typeName, origin, direction, clientTimestamp, modifiers, true) 

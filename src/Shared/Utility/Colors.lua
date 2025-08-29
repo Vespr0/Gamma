@@ -1,4 +1,3 @@
---!strict
 local Colors = {}
 
 local function adjustColor(color, factor)

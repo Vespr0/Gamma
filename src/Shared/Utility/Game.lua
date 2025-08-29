@@ -63,6 +63,12 @@ Game.Generation = {
 	PART_WIDTH = 10,
 	PART_HEIGHT = 2
 }
-
+-- Admins
+Game.Admins = {
+    1075120350, -- Vespro
+    398260411, -- Lermiex
+    -1, -- Testing user ids
+    -2,
+}
 
 return Game

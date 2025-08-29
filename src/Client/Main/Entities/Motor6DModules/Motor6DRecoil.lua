@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Modules
 local Spring = require(ReplicatedStorage.Packages.spring)
+local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 
 -- Constants
 local SPRING_CONFIG = {
@@ -41,12 +42,14 @@ function RecoilMotor.Connect(manager, rig, motors)
     self.defaultLeftC0 = self.leftShoulder.C0
     
     -- Connect to recoil events
-    local connection = RunService.RenderStepped:Connect(function(deltaTime)
+    self.connection = RunService.RenderStepped:Connect(function(deltaTime)
+        if not EntityUtility.IsAlive(rig) then
+            self.connection:Disconnect()
+            return
+        end
         self:update(deltaTime)
     end)
    
-    self.connection = connection
-    
     return self
 end
 

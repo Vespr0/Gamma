@@ -120,7 +120,8 @@ function ViewmodelManager:setupToolEvents()
         end
     end)
 
-    self.backpack.events.ToolEquip:Connect(function(tool)
+    self.backpack.events.ToolEquip:Connect(function(tool, index, handleMotor)
+        self.characterHandleMotor = handleMotor
         local ID = tool:GetAttribute("ID")
         for otherID, fakeTool in self.fakeTools do
             if otherID == ID then
@@ -217,7 +218,7 @@ function ViewmodelManager:syncMotors()
         RightShoulder = self.rig.Torso["Right Shoulder"],
         LeftShoulder = self.rig.Torso["Left Shoulder"],
         RootJoint = self.rig.HumanoidRootPart.RootJoint,
-        Handle = self.rig:FindFirstChild("Handle") , -- May be nil and that's ok
+        Handle = self.currentFakeTool and self.currentFakeTool.motor,
     }
 
     local character = self.entity.rig
@@ -225,7 +226,7 @@ function ViewmodelManager:syncMotors()
         RightShoulder = character.Torso["Right Shoulder"],
         LeftShoulder = character.Torso["Left Shoulder"],
         RootJoint = character.HumanoidRootPart.RootJoint,
-        Handle = character:FindFirstChild("Handle")
+        Handle = self.characterHandleMotor
     }
 
     for name, rigMotor in rigMotors do
@@ -277,6 +278,7 @@ function ViewmodelManager:createFakeToolComponents(tool, components)
     
     local clonedMotor = self:cloneMotor(components.motor, correspondingLimb, clonedModel.Handle)
  
+    clonedMotor.Parent = folder
     clonedModel.Parent = folder
 
     -- Add hide and show functions to the fakeTool
@@ -288,12 +290,12 @@ function ViewmodelManager:createFakeToolComponents(tool, components)
         destroy = function(self) destroyFakeTool(self) end,
         hide = function(self)
             self.model.Parent = nil -- Hide the model by setting parent to nil
-            clonedMotor.Parent = nil
+            clonedMotor.Enabled = false
         end,
         show = function(self)
             if self.folder and self.folder:IsDescendantOf(game) then -- Ensure folder is valid
                 self.model.Parent = self.folder
-                clonedMotor.Parent = self.folder.Parent
+                clonedMotor.Enabled = true
             else
                 warn("Cannot show fake tool: folder is invalid or destroyed.")
             end
@@ -309,7 +311,6 @@ function ViewmodelManager:cloneMotor(originalMotor, part0, part1)
     clonedMotor.Part1 = part1
     clonedMotor.C0 = scaleCFrame(originalMotor.C0, VIEWMODEL_SCALE)
     clonedMotor.C1 = scaleCFrame(originalMotor.C1, VIEWMODEL_SCALE)
-    clonedMotor.Parent = part0
     return clonedMotor
 end
 

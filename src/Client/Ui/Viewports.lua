@@ -1,6 +1,7 @@
 local Viewports = {}
 
-function Viewports.GetItemViewport(tool: Tool,existingViewport) 
+function Viewports.GetItemViewport(tool: Instance,existingViewport) 
+    -- TODO Validate tool with centralized utility module
     local model = tool:FindFirstChild("Model"):Clone()
 
     -- Instances

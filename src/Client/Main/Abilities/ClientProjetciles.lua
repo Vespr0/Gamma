@@ -13,7 +13,6 @@ local RunService = game:GetService("RunService")
 -- Modules
 local GammaCast = require(ReplicatedStorage.Abilities.Projectile.GammaCast)
 local ClientEntity = require(script.Parent.Parent.Entities.ClientEntity)
-local Snapshots = require(ReplicatedStorage.Abilities.Projectile.GammaCast.Utility.Snapshots)
 
 -- Variables
 local Player = Players.LocalPlayer
@@ -32,23 +31,9 @@ function ClientProjectiles.new()
 end
 
 function ClientProjectiles:setup()
-    -- UserInputService.InputBegan:Connect(function(Input, GPE)
-    --     if GPE or Input.UserInputType ~= Enum.UserInputType.MouseButton1 then
-    --         return
-    --     end
-    
-    --     local entity = ClientEntity.LocalPlayerInstance
-    --     local rig = entity.rig
-    --     local origin = rig.Head.Position
-    --     -- local direction = workspace.CurrentCamera.CFrame.LookVector
-    --     local direction = Mouse.Hit.LookVector
-
-    --     GammaCast.CastClient(entity.id,"Bullet", origin, direction, nil)
+    -- GammaCast.RemoteEvent.OnClientEvent:Connect(function(entityID, typeName, origin, direction, modifiers)
+    --     GammaCast.CastClient(entityID, typeName, origin, direction, modifiers)
     -- end)
-
-    GammaCast.RemoteEvent.OnClientEvent:Connect(function(entityID, typeName, origin, direction, modifiers)
-        GammaCast.CastClient(entityID, typeName, origin, direction, modifiers)
-    end)
 end
 
 function ClientProjectiles.Init()

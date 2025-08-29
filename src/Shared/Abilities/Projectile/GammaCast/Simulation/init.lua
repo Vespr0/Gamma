@@ -10,7 +10,7 @@ local Draw = require(ReplicatedStorage.Utility.Draw)
 local BulletTypes = require(script.Parent.BulletTypes)
 local TypeRig = require(ReplicatedStorage.Types.TypeRig)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
-local Snapshots = require(script.Parent.Utility.Snapshots)
+local Snapshots = require(ReplicatedStorage.Utility.LagCompensation.Snapshots)
 local Settings = require(script.Parent.Settings)
 
 -- Import the custom hit result type
@@ -90,7 +90,7 @@ function Simulation.new(authorEntityID: number, typeName: string, origin: Vector
 
     -- Store author's ping at fire time (server only)
     self.authorPing = 0 -- Default to 0 for client or if player not found
-    if IS_SERVER then
+    if IS_SERVER and self.clientTimestamp ~= nil then
         local authorPlayer = EntityUtility.GetPlayerFromEntityID(authorEntityID)
         if authorPlayer then
             self.authorPing = workspace:GetServerTimeNow() - self.clientTimestamp
@@ -100,6 +100,7 @@ function Simulation.new(authorEntityID: number, typeName: string, origin: Vector
             warn("GammaCast Simulation.new: Could not find player for authorEntityID", authorEntityID, ". Assuming NPC or disconnected player, ping set to 0.")
         end
     end
+    -- If clientTimestamp is nil, authorPing stays 0 and lag comp is ignored
 
     -- Bullet definition
     local def = BulletTypes[typeName] or BulletTypes.Default
@@ -154,24 +155,27 @@ function Simulation:step(dt: number): SimulationResult?
 
     if self.debug then
         -- Draw the ray using the actual movement vector (stepVec) to ensure perfect connection
-        Draw.ray(self.position, stepVec, IS_SERVER and DEBUG_COLORS.Server or DEBUG_COLORS.Client, nil, IS_SERVER and 0.5 or 0.1)
+        Draw.ray(self.position, stepVec, IS_SERVER and DEBUG_COLORS.Server or DEBUG_COLORS.Client, nil,0.05)
     end
 
     -- Lag compensation: check entities via snapshots
+    -- Lag compensation: check entities via snapshots only if clientTimestamp is provided
     local lagCompTime: number? = nil
-    if IS_SERVER then
+    if IS_SERVER and self.clientTimestamp ~= nil then
         -- Calculate lag compensation
         lagCompTime = self.clientTimestamp - (self.authorPing + Settings.INTERPOLATION_OFFSET)
     end
 
-    if IS_SERVER and lagCompTime then
+    if IS_SERVER and lagCompTime ~= nil then
         -- Lag-check ray against entities along full bullet length
         local entityHit = Snapshots.RaycastEntities(self.authorRig, self.position, compDir, lagCompTime)
         if entityHit then
-            Draw.point(entityHit.Position, IS_SERVER and DEBUG_COLORS.Compensated,nil,2)
+            Draw.point(entityHit.Position, DEBUG_COLORS.Compensated,nil,.5)
             return {Rig = entityHit.Rig, Position = entityHit.Position}
         end
     end
+    -- If clientTimestamp is nil, lag compensation is skipped and normal raycast proceeds
+
 
     -- Perform workspace raycast for environment collision (movement step)
     local hit = workspace:Raycast(self.position, moveDir, self.raycastParams)
@@ -187,42 +191,62 @@ function Simulation:step(dt: number): SimulationResult?
     self.traveled = (self.traveled :: number) + stepVec.Magnitude
     self.velocity = nextVelocity
 
-    if hit and self.debug then
-        Draw.point(hit.Position, IS_SERVER and DEBUG_COLORS.Server or DEBUG_COLORS.Client)
+    if hit then
+        if self.debug then
+            Draw.point(hit.Position, IS_SERVER and DEBUG_COLORS.Server or DEBUG_COLORS.Client)
+        end
+        return {Position = hit.Position, Rig = hit.Instance, Normal = hit.Normal} 
     end
 
-    return {Position = hit.Position, Rig = hit.Instance, Normal = hit.Normal} -- Returns RaycastResult? (or nil)
+    return nil
 end
 
 function Simulation:start(): (SimulationResult?)
     -- main sim loop
     if self.hitscan then
-        -- Hitscan behavior: single instantaneous ray with lag compensation
+        -- Hitscan behavior: single instantaneous ray with lag compensation (if clientTimestamp is provided)
         local lagCompTime: number? = nil
-        if IS_SERVER then
+        if IS_SERVER and self.clientTimestamp ~= nil then
             lagCompTime = self.clientTimestamp - (self.authorPing + Settings.INTERPOLATION_OFFSET)
         end
-        if IS_SERVER and lagCompTime then
+        if IS_SERVER and lagCompTime ~= nil then
             local entityHit = Snapshots.RaycastEntities(self.authorRig, self.origin, self.direction.Unit * self.range, lagCompTime)
             if entityHit then
                 if self.debug then
-                    Draw.point(entityHit.Position, IS_SERVER and DEBUG_COLORS.Compensated or DEBUG_COLORS.Client, nil, 2)
+                    Draw.point(entityHit.Position, IS_SERVER and DEBUG_COLORS.Compensated or DEBUG_COLORS.Client, nil, 1)
                 end
                 return {Rig = entityHit.Rig, Position = entityHit.Position}
             end
         end
+        -- If clientTimestamp is nil, skip lag comp and just raycast environment
         local rayDir = self.direction.Unit * self.range
         if self.debug then
             Draw.ray(self.origin, rayDir, IS_SERVER and DEBUG_COLORS.Server or DEBUG_COLORS.Client)
         end
         local envHit = workspace:Raycast(self.origin, rayDir, self.raycastParams)
-        if envHit and self.debug then
-            Draw.point(envHit.Position, IS_SERVER and DEBUG_COLORS.Server or DEBUG_COLORS.Client)
-        end
         if envHit then
-            return {Position = envHit.Position}
+            if self.debug then
+                Draw.point(envHit.Position, IS_SERVER and DEBUG_COLORS.Server or DEBUG_COLORS.Client)
+            end
+            -- Check if the hit instance is part of an entity rig
+            local candidate = envHit.Instance
+            local rig = nil
+            -- TODO: potentially dangerous while loop
+            while candidate do
+                if candidate.Parent == Game.Folders.Entities then
+                    rig = candidate
+                    break
+                end
+                candidate = candidate.Parent
+            end
+            if rig then
+                return {Rig = rig, Position = envHit.Position, Normal = envHit.Normal, Distance = envHit.Distance}
+            else
+                return {Instance = envHit.Instance, Position = envHit.Position, Normal = envHit.Normal, Distance = envHit.Distance}
+            end
         else
-            return {Position = self.origin + rayDir}
+            return nil
+            -- return {Position = self.origin + rayDir}
         end
     end
     self.startTime = os.clock()

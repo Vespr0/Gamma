@@ -17,8 +17,8 @@ local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local ClientBackpack = require(script.Parent.Parent.Entities.ClientBackpack)
 local ClientMovement = require(script.Parent.Parent.Entities.ClientMovement)
 local ClientAppearance = require(script.Parent.ClientAppearance)
-local Recoil = require(script.Parent.Parent.Entities.Recoil)
-local ClientTilting = require(script.Parent.ClientTilting)
+local ClientLookAt = require(script.Parent.ClientLookAt)
+
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 ClientEntity.Instances = {}
@@ -58,8 +58,6 @@ function ClientEntity:setup()
 	self:setupAppearance()
 
 	self.Motor6DManager = Motor6DManager.new(self.rig)
-	self.recoil = Recoil.new(self)
-	self.tilting = ClientTilting.new(self)
 
 	self.events.Died:Connect(function()
 		self:destroy()
@@ -102,7 +100,8 @@ function ClientEntity:destroy()
 	self:destroyBase()
 end
 
-function ClientEntity.Init() 
+function ClientEntity.Init()
+	warn("w")
 	for _,rig in CollectionService:GetTagged(Game.Tags.Entity) do
 		ClientEntity.new(rig)
 	end

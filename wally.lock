@@ -3,11 +3,6 @@
 registry = "test"
 
 [[package]]
-name = "1axen/secure-cast"
-version = "1.1.4"
-dependencies = []
-
-[[package]]
 name = "acecateer/fusion"
 version = "0.3.1"
 dependencies = []
@@ -48,14 +43,24 @@ version = "0.2.0"
 dependencies = [["types", "alicesaidhi/conch-types@0.2.0"]]
 
 [[package]]
+name = "alreadypro/vluau"
+version = "0.3.0"
+dependencies = []
+
+[[package]]
 name = "andrea/repo"
 version = "0.1.0"
-dependencies = [["TableUtil", "sleitnick/table-util@1.2.1"], ["conch", "alicesaidhi/conch@0.2.3"], ["conch_ui", "alicesaidhi/conch-ui@0.2.3"], ["fusion", "acecateer/fusion@0.3.1"], ["greedymeshing", "royal0959/rblx-nonvoxel-greedy-meshing@1.0.3"], ["partcache", "andremhpra/partcache@1.0.0"], ["raycasthitbox", "ulferno/raycasthitbox@4.0.2"], ["secure-cast", "1axen/secure-cast@1.1.4"], ["shapecasthitbox", "teamswordphin/shapecasthitbox@0.1.5"], ["signal", "sleitnick/signal@1.5.0"], ["spring", "nightcycle/spring@1.0.0"], ["trove", "cody-nelson/trove@0.0.1"]]
+dependencies = [["BridgeNet2", "ffrostflame/bridgenet2@0.5.6"], ["TableUtil", "sleitnick/table-util@1.2.1"], ["conch", "alicesaidhi/conch@0.2.3"], ["conch_ui", "alicesaidhi/conch-ui@0.2.3"], ["fusion", "acecateer/fusion@0.3.1"], ["greedymeshing", "royal0959/rblx-nonvoxel-greedy-meshing@1.0.3"], ["ingameexplorer", "brinkokevin/ingameexplorer@3.0.2"], ["partcache", "andremhpra/partcache@1.0.0"], ["shapecasthitbox", "teamswordphin/shapecasthitbox@0.1.9"], ["signal", "sleitnick/signal@1.5.0"], ["spring", "nightcycle/spring@1.0.0"], ["suphisdatastoremodule", "skylord-103/suphisdatastoremodule@1.0.0"], ["trove", "cody-nelson/trove@0.0.1"]]
 
 [[package]]
 name = "andremhpra/partcache"
 version = "1.0.0"
 dependencies = []
+
+[[package]]
+name = "brinkokevin/ingameexplorer"
+version = "3.0.2"
+dependencies = [["vluau", "alreadypro/vluau@0.3.0"]]
 
 [[package]]
 name = "centau/vide"
@@ -68,6 +73,21 @@ version = "0.0.1"
 dependencies = [["t", "osyrisrblx/t@3.1.1"]]
 
 [[package]]
+name = "ffrostflame/bridgenet2"
+version = "0.5.6"
+dependencies = [["RemotePacketSizeCounter", "pysephwasntavailable/remotepacketsizecounter@2.4.1"], ["TableKit", "ffrostflame/tablekit@0.2.4"], ["wallyInstanceManager", "ffrostflame/wally-instance-manager@0.1.0"]]
+
+[[package]]
+name = "ffrostflame/tablekit"
+version = "0.2.4"
+dependencies = []
+
+[[package]]
+name = "ffrostflame/wally-instance-manager"
+version = "0.1.0"
+dependencies = []
+
+[[package]]
 name = "nightcycle/spring"
 version = "1.0.0"
 dependencies = []
@@ -78,8 +98,18 @@ version = "3.1.1"
 dependencies = []
 
 [[package]]
+name = "pysephwasntavailable/remotepacketsizecounter"
+version = "2.4.1"
+dependencies = []
+
+[[package]]
 name = "royal0959/rblx-nonvoxel-greedy-meshing"
 version = "1.0.3"
+dependencies = []
+
+[[package]]
+name = "skylord-103/suphisdatastoremodule"
+version = "1.0.0"
 dependencies = []
 
 [[package]]
@@ -94,10 +124,5 @@ dependencies = []
 
 [[package]]
 name = "teamswordphin/shapecasthitbox"
-version = "0.1.5"
-dependencies = []
-
-[[package]]
-name = "ulferno/raycasthitbox"
-version = "4.0.2"
+version = "0.1.9"
 dependencies = []

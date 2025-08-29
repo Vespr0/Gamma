@@ -9,6 +9,15 @@ local _TweenService = game:GetService("TweenService")
 local Trove = require(ReplicatedStorage.Packages.trove)
 local Lerp = require(ReplicatedStorage.Utility.Lerp)
 local MovementMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Movement")
+
+local ClientAnima
+local function getClientAnima()
+    if not ClientAnima then
+        ClientAnima = require(script.Parent.Parent.Player.ClientAnima):get()
+    end
+    return ClientAnima
+end
+
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local Inputs = require(script.Parent.Parent.Input.Inputs)
 local SprintingInput = Inputs.GetModule("Sprinting")
@@ -16,7 +25,7 @@ local CrouchingInput = Inputs.GetModule("Crouching")
 
 local SPRINTING_BOOST = 5
 local CROUCHING_PENALTY = 8
-local AIRBORNE_PUSH = 30
+local AIRBORNE_PUSH = 40
 local TRANSITION_SPEED = 3
 
 function Movement.new(entity,isLocalPlayerInstance)
@@ -44,12 +53,11 @@ end
 
 function Movement:setup() 
     self:setupBoosts()
-
     self:setupSprinting()
 
-    self.entity.events.Died:Connect(function()
+    self.trove:Add(self.entity.events.Died:Connect(function()
         self:destroy()
-    end)
+    end))
 end
 
 function Movement:setupSprinting()
@@ -76,7 +84,7 @@ function Movement:setupSprinting()
             self.isCrouching = mode
             self.entity.rig:SetAttribute("Crouching",mode)
             -- Add camera offsetr
-            -- ClientAnima.camera.offsets.Crouching = mode and Vector3.new(0, 0.5, 0) or Vector3.zero TODO
+            getClientAnima().camera.offsets.Crouching = mode and Vector3.new(0, 0.5, 0) or Vector3.zero 
             -- Set the crouching attribute on the server and consequently on all the other clients
             MovementMiddleware.SendMovementAction:Fire("Crouching",mode) 
         end))
@@ -113,6 +121,8 @@ end
 
 function Movement:setupBoosts()
     self.trove:Add(RunService.RenderStepped:Connect(function()
+        -- TODO: Shoudlnt be necessary but the entity.died event does not fire here for some reason im going insane.
+        if not EntityUtility.IsAlive(self.entity.rig) then return end
         for category,_ in self.boosts do
             self:updateBoostCategory(category)
         end

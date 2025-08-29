@@ -72,7 +72,6 @@ end
 function Motor6DManager:setupMotors()
     for _,motor in self.rig:GetDescendants() do
         if motor:IsA("Motor6D") then
-            warn(motor.Name)
             self.motors[motor.Name] = motor
             self.dualBiases[motor.Name] = {}
             self.defaults[motor.Name] = {}

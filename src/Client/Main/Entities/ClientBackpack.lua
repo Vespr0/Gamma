@@ -103,6 +103,7 @@ function ClientBackpack:attachHandle(dummyTool)
         handleMotor6D.Parent = self.entity.rig
         handleMotor6D.Part0 = self.entity.rig:FindFirstChild("Right Arm")
         handleMotor6D.Part1 = equippedToolHandle
+        self.handleMotor6D = handleMotor6D
     else
         warn("No handle motor6D found in item asset")
     end
@@ -121,7 +122,7 @@ function ClientBackpack:equipTool(index: number)
         local existingHandle = tool:FindFirstChild("Handle")
         if existingHandle then existingHandle:Destroy() end
         -- Tool equipped local event
-        self.events.ToolEquip:Fire(tool,tool:GetAttribute("Index"))
+        self.events.ToolEquip:Fire(tool,tool:GetAttribute("Index"), self.handleMotor6D)
         -- Dummy tool
         local dummyTool = tool:Clone()
         dummyTool.Parent = self.entity.rig

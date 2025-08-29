@@ -12,6 +12,7 @@ local RunService = game:GetService("RunService")
 local Signal = require(ReplicatedStorage.Packages.signal)
 local Game = require(ReplicatedStorage.Utility.Game)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
+local Trove = require(ReplicatedStorage.Packages.trove)
 
 function BaseEntity.new(rig,id: number)
 	if not EntityUtility.IsHealthy(rig) then warn(`Rig "{rig.Name}" is not alive, cannot create base entity instance`) return end
@@ -29,6 +30,8 @@ function BaseEntity.new(rig,id: number)
 	self.root = rig:FindFirstChild("HumanoidRootPart")
 	self.height = 0 :: number
 	
+	self.trove = Trove.new()
+
 	-- Events
 	self.events = {
 		Died = Signal.new(),
@@ -47,12 +50,12 @@ function BaseEntity:setupBase()
 end
 
 function BaseEntity:setupEvents()
-	self.rig.ChildAdded:Connect(function(child)
+	self.trove:Add(self.rig.ChildAdded:Connect(function(child)
 		self.events.ChildAdded:Fire(child)
-	end)
-	self.rig.ChildRemoved:Connect(function(child)
+	end))
+	self.trove:Add(self.rig.ChildRemoved:Connect(function(child)
 		self.events.ChildRemoved:Fire(child)
-	end)
+	end))
 end
 
 function BaseEntity:setupRig()
@@ -69,15 +72,29 @@ function BaseEntity:setupRig()
 	-- Height of the rig
 	self.height = self.rig:GetExtentsSize().Y :: number
 
-	self.humanoid.Died:Connect(function()
-		self.events.Died:Fire()
-	end)
-	self.rig.Destroying:Connect(function()
-		self.events.Died:Fire()
-	end)
+	-- TODO: Possible performance issue?
+	self.trove:Add(RunService.Heartbeat:Connect(function()
+		if not EntityUtility.IsAlive(self.rig) or not EntityUtility.IsHealthy(self.rig) then
+			warn("DEMACIA")
+			self.events.Died:Fire()
+		end
+	end))
+	-- self.trove:Add(self.humanoid.Died:Connect(function()
+	-- 	self.events.Died:Fire()
+	-- end))
+	-- self.trove:Add(self.rig.Destroying:Connect(function()
+	-- 	self.events.Died:Fire()
+	-- end))
 end
 
 function BaseEntity:destroyBase()
+	if not self.trove then warn("destroyBase called twice on BaseEntity") end
+	
+	self.trove:Destroy()
+	-- TODO: This code repeats often in a lot of classes
+	for _, event: any in self.events do
+		event:Destroy()
+	end
 	table.clear(self)
 end
 

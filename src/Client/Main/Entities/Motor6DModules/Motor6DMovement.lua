@@ -6,8 +6,8 @@ local RunService = game:GetService("RunService")
 
 -- Modules
 local TypeRig = require(ReplicatedStorage.Types.TypeRig)
-local Trove = require(ReplicatedStorage.Packages.trove)
 local Lerp = require(ReplicatedStorage.Utility.Lerp)
+local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 
 -- Constants
 local BIAS_NAME = "Leaning"
@@ -83,6 +83,10 @@ function Motor6DTilt.Connect(utility, rig: TypeRig.Rig)
 
     -- Main update loop
     self.connection = RunService.Heartbeat:Connect(function(deltaTime)
+        if not EntityUtility.IsAlive(rig) then
+            self.connection:Disconnect()
+            return
+        end
         local velocity = rootPart.Velocity
         local moveDirection, speed = calculateMoveDirection(velocity)
         local targetTilt = calculateTargetTilt(moveDirection, speed, rootPart.CFrame)

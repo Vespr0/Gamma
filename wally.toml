@@ -14,9 +14,13 @@ trove = "cody-nelson/trove@0.0.1"
 # iris = "xswezan/iris@2.0.5"
 conch = "alicesaidhi/conch@0.2.3"
 conch_ui = "alicesaidhi/conch-ui@0.2.3"
+ingameexplorer = "brinkokevin/ingameexplorer@3.0.2"
 
 # Melee
-raycasthitbox = "ulferno/raycasthitbox@4.0.2"
+shapecasthitbox = "teamswordphin/shapecasthitbox@0.1.7"
+
+# Network
+BridgeNet2 = "ffrostflame/bridgenet2@^0.5"
 
 # Voxel destruction
 greedymeshing = "royal0959/rblx-nonvoxel-greedy-meshing@1.0.3"
@@ -24,5 +28,6 @@ partcache = "andremhpra/partcache@1.0.0"
 
 # Spring
 spring = "nightcycle/spring@1.0.0"
-shapecasthitbox = "teamswordphin/shapecasthitbox@0.1.5"
 
+# Datastore
+suphisdatastoremodule = "skylord-103/suphisdatastoremodule@1.0.0"

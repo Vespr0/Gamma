@@ -1,0 +1,152 @@
+local Gore = {}
+
+-- Services
+local Debris = game:GetService("Debris")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local AssetService = game:GetService("AssetService")
+
+-- Modules
+local Noise = require(ReplicatedStorage.Shared.Utility.Noise)
+local AssetsDealer = require(ReplicatedStorage.Shared.AssetsDealer)
+
+-- Constants
+local RAYCAST_PARAMS = RaycastParams.new()
+RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
+RAYCAST_PARAMS.IgnoreWater = true
+local DEBUG_DURATION = 5 -- Time to keep debug nodes visible
+
+-- Variables
+Gore.EditableMeshes = {}
+
+-- Debug Utilities
+local function debugNode(position: Vector3)
+	local node = AssetsDealer.GetMesh("Misc/Node")
+	node.Parent = workspace
+	if position then
+		node.Position = position
+	end
+	Debris:AddItem(node, DEBUG_DURATION)
+	return node
+end
+
+local function debugAttachment(position: Vector3)
+	local attachment = Instance.new("Attachment")
+	attachment.Parent = workspace.Terrain
+	if position then
+		attachment.WorldPosition = position
+	end
+	return attachment
+end
+
+-- Mesh Utilities
+local function getVerticesPositions(editableMesh: EditableMesh, vertexIds: {number})
+	local positions = {}
+	for _, vertexId in ipairs(vertexIds) do
+		positions[vertexId] = editableMesh:GetPosition(vertexId)
+	end
+	return positions
+end
+
+local function mergeCloseVertices(editableMesh: EditableMesh)
+	local vertexPositions = getVerticesPositions(editableMesh, editableMesh:GetVertices())
+	for vertexId, position in pairs(vertexPositions) do
+		local adjacentVertices = editableMesh:GetAdjacentVertices(vertexId)
+		for _, adjacentVertexId in ipairs(adjacentVertices) do
+			if adjacentVertexId ~= vertexId then
+				local adjacentPosition = vertexPositions[adjacentVertexId]
+				if (adjacentPosition - position).Magnitude < 0.05 then
+					editableMesh:SetPosition(vertexId, adjacentPosition)
+					break
+				end
+			end
+		end
+	end
+end
+
+local function getBloodMesh(part: MeshPart)
+	local bloodMesh = part:FindFirstChild("BloodMesh")
+	if not bloodMesh then
+		bloodMesh = part:Clone()
+		bloodMesh.Name = "BloodMesh"
+		bloodMesh.Parent = part
+		bloodMesh.Color = Color3.new(0.7, 0, 0)
+		bloodMesh.Size -= Vector3.one * 0.2
+	end
+	return bloodMesh
+end
+
+local function raycast(origin: Vector3, direction: Vector3)
+	local result = workspace:Raycast(origin, direction, RAYCAST_PARAMS)
+	if result and result.Instance then
+		local mesh = result.Instance:FindFirstChild("Mesh")
+		if mesh and mesh:IsA("MeshPart") then
+			return result.Position, mesh, result.Normal
+		end
+	end
+	return nil
+end
+
+function Gore.GetEditableMesh(part: MeshPart)
+	assert(part:IsA("MeshPart"), `Part "{part.Name}" must be a MeshPart to work with EditableMesh.`)
+
+	local editableMesh
+
+	editableMesh = Gore.EditableMeshes[part]
+	if not editableMesh then
+		editableMesh = AssetService:CreateEditableMeshAsync(part.MeshId)
+		if editableMesh then
+			Gore.EditableMeshes[part] = editableMesh
+		else
+			warn(`Failed to create EditableMesh for "{part.Name}"`)
+		end
+	end
+
+	return editableMesh
+end
+
+-- Core Functionality
+function Gore.HitRaycast(origin: Vector3, direction: Vector3, radius: number?)
+	radius = radius or 1
+	assert(radius > 0, "Radius must be a positive number.")
+
+	local position, part, normal = raycast(origin, direction)
+	if not position or not part or not normal then
+		warn("Raycast failed.")
+		return
+	end
+
+	local editableMesh = Gore.GetEditableMesh(part)
+	local bloodMesh = getBloodMesh(part)
+	local bloodEditableMesh = Gore.GetEditableMesh(bloodMesh)
+
+	local localPosition = part.CFrame:PointToObjectSpace(position)
+	local localRadius = radius / 2
+
+	debugAttachment(position).Parent = part
+
+	local vertices = editableMesh:FindVerticesWithinSphere(localPosition, localRadius)
+	if #vertices == 0 then
+		warn("No vertices found within the radius.")
+		return
+	end
+
+	local vertexPositions = getVerticesPositions(editableMesh, vertices)
+	for _, vertexId in ipairs(vertices) do
+		local vertexPosition = vertexPositions[vertexId]
+		local distance = (vertexPosition - localPosition).Magnitude
+		local distanceFactor = 1 - math.clamp(distance / localRadius, 0, 1)
+		local noiseFactor = math.clamp(Noise.Get2D(normal.X, normal.Y, 0.3), 0, 1)
+		local finalFactor = distanceFactor * 0.4
+
+		local newPosition = vertexPosition:Lerp(normal, finalFactor)
+		local newBloodPosition = vertexPosition:Lerp(normal, math.clamp(finalFactor - 0.3, 0, 1))
+
+		editableMesh:SetPosition(vertexId, newPosition)
+		bloodEditableMesh:SetPosition(vertexId, newBloodPosition)
+	end
+
+	mergeCloseVertices(editableMesh)
+	mergeCloseVertices(bloodEditableMesh)
+end
+
+return Gore

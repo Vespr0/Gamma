@@ -12,8 +12,9 @@ local FirstPerson = require(script.Parent.FirstPerson)
 local ThirdPerson = require(script.Parent.ThirdPerson)
 
 function Camera.new(anima)
-    local self = setmetatable({}, Camera)
     assert(anima, "anima is nil")
+
+    local self = setmetatable({}, Camera)
 
     -- Basic Properties
     self.anima = anima

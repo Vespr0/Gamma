@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Modules
 local TypeRig = require(ReplicatedStorage.Types.TypeRig)
 local Trove = require(ReplicatedStorage.Packages.trove)
+local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 
 local BIAS_NAME = "Crouching"
 local SMOOTHNESS = 10
@@ -12,9 +13,15 @@ local SMOOTHNESS = 10
 function Motor6DCrouching.Connect(utility, rig: TypeRig.Rig)
     local self = {}
 
+    self.connection = nil
     utility:checkMotors("RootJoint", "Right Hip", "Left Hip")
 
     local function animate(mode: boolean)
+        if not EntityUtility.IsAlive(rig) then
+            self.connection:Disconnect()
+            return 
+        end
+
         if mode then
             -- Add biases
             local rootC1Bias = { offset = Vector3.zAxis / 1.5, angles = CFrame.Angles(0, 0, 0) }

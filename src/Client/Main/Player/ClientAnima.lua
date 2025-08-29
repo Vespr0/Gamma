@@ -8,26 +8,25 @@ ClientAnima.__index = ClientAnima
 -- Modules
 local Signal = require(ReplicatedStorage.Packages.signal)
 local ClientEntity = require(script.Parent.Parent.Entities.ClientEntity)
-local Camera = require(script.Parent.Parent.Character.Camera.CameraController)
+local CameraController = require(script.Parent.Parent.Character.Camera.CameraController)
 -- Variables
 local Player = Players.LocalPlayer
-local singleton = nil
+ClientAnima.Singleton = nil
 
 function ClientAnima.new()
-	if singleton then error("ClientAnima: Singleton already exists.") end
+	if ClientAnima.Singleton then error("ClientAnima: Singleton already exists.") end
 	local self = setmetatable(BaseAnima.new(Player), ClientAnima)
 
 	self:setup()
 
-	singleton = self
 	return self
 end
 
 function ClientAnima:get()
-	if not singleton then
-		singleton = ClientAnima.new()
+	if not ClientAnima.Singleton then
+		ClientAnima.Singleton = ClientAnima.new()
 	end
-	return singleton
+	return ClientAnima.Singleton
 end
 
 function ClientAnima:setupEntity(entity)
@@ -36,24 +35,27 @@ function ClientAnima:setupEntity(entity)
 end
 
 function ClientAnima:setup()
-	self.camera = Camera.new(self)
-	
+	self.camera = CameraController.new(self)
+
 	if ClientEntity.LocalPlayerInstance then
 		self:setupEntity(ClientEntity.LocalPlayerInstance)
+	else
+		ClientEntity.GlobalAdded:Connect(function(entity)
+			if entity.isLocalPlayerInstance then
+				self:setupEntity(entity)
+			end
+		end)
 	end
-	ClientEntity.GlobalAdded:Connect(function(entity)
-		if entity.isLocalPlayerInstance then
-			self:setupEntity(entity)
-		end
-	end)
 end
 
 function ClientAnima:destroy()
 	-- Fire event and clear the singleton
 	self:destroyBase()
-	singleton = nil
+	ClientAnima.Singleton = nil
 end
 
-function ClientAnima.Init() ClientAnima:get() end
+function ClientAnima.Init()
+	ClientAnima.Singleton = ClientAnima.new()
+end
 
 return ClientAnima

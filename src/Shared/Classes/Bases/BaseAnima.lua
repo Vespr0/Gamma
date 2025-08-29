@@ -117,6 +117,8 @@ end
 -- end
 
 function BaseAnima:destroyBase()
+	task.wait(0.1) -- Wait a frame to ensure all events are processed, TODO: hacky solution
+
 	-- Fire the Removed event
 	self.events.Removed:Fire()
 

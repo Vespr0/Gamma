@@ -48,17 +48,16 @@ function ServerAnima:setupProperties()
 end
 
 function ServerAnima:loadCharacter()
+	warn(`Loading character for player "{self.player.UserId}"`)
 	local rig = AssetsDealer.Get("Rigs","Human","Clone")
 	rig.Name = self.player.Name
 	-- Move the rig to a temporary folder
 	rig.Parent = game:GetService("ServerStorage"):WaitForChild("Temp")
-	rig.Humanoid.Health = rig.Humanoid.MaxHealth -- TODO: I have to do this, i have no fucking clue why
+	-- local humanoid = rig:WaitForChild("Humanoid")
+	-- humanoid.Health = humanoid.MaxHealth -- TODO: I have to do this, i have no fucking clue why
 
 	self.entity = ServerEntity.new(rig,self.player,"Blue")
 	self.events.EntityAdded:Fire(self.entity)
-
-	warn("Applied entityID attribute to player")
-
 	self.player.Character = rig
 end
 
@@ -68,8 +67,9 @@ function ServerAnima:setup()
 	-- Setup character loading
 	self:loadCharacter()
 	self.events.EntityDied:Connect(function()
-		print("Player died")
+		warn("Player died")
 		task.wait(Game.RespawnTime)
+		-- self.entity.rig:Destroy()
 		self:loadCharacter()
 	end)
 end

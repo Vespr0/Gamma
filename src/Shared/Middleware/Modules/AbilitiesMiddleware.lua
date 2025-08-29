@@ -1,4 +1,3 @@
---!strict
 local Middleware = {}
 
 local Players = game:GetService("Players")
@@ -38,7 +37,14 @@ function Middleware.Init(util)
 			checkAbilityNameAndToolIndex(abilityName, toolIndex)
 			checkEntityID(entityID)
 
-			util.remote:FireClient(player, entityID, abilityName, toolIndex,...)
+			if player == nil then
+				-- Replicate to all players (for Mobs/NPCs)
+				util.remote:FireAllClients(entityID, abilityName, toolIndex,...)
+			else
+				-- Replicate to specific player
+				assert(typeof(player) == "Instance" and player:IsA("Player"), "Invalid request, player must be a Player instance got: "..player)
+				util.remote:FireClient(player, entityID, abilityName, toolIndex,...)
+			end
 		end)
     else
         -- Send Client

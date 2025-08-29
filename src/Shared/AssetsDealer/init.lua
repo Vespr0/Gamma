@@ -84,30 +84,12 @@ function AssetsDealer.GetDir(category: string, directory: string, mode: assetsGe
         return nil
     end
 
-    -- Baking logic
-	if not AssetsDealer.Bakery[category] then
-		AssetsDealer.Bakery[category] = {}
-    end
-
-	if AssetsDealer.Bakery[category][directory] then
-        if mode == "Clone" then
-			return AssetsDealer.Bakery[category][directory]:Clone()
-        end
-		return AssetsDealer.Bakery[category][directory]
-    end
-
-    local asset = currentFolder
     if mode == "Clone" then
-		AssetsDealer.Bakery[category][directory] = asset
-        asset = asset:Clone()
-    elseif mode == "Require" and asset:IsA("ModuleScript") then
-        asset = require(asset)
+        return currentFolder:Clone()
+    elseif mode == "Require" and currentFolder:IsA("ModuleScript") then
+        return require(currentFolder)
     end
-
-	AssetsDealer.Bakery[category][directory] = asset
-
-    assert(asset, `Couldn't find asset of category "{category}" with directory "{directory}"`)
-    return asset
+    return currentFolder
 end
 
 function AssetsDealer.Get(category: string,name: string,mode: assetsGetMode) 
@@ -119,32 +101,15 @@ function AssetsDealer.Get(category: string,name: string,mode: assetsGetMode)
 	
 	for _,d in AssetsDealer.RawAssets[category] do
 		if d.Name == name then
-			-- Baking
-			if not AssetsDealer.Bakery[category] then
-				AssetsDealer.Bakery[category] = {}
-			end
-			if AssetsDealer.Bakery[category][name] then
-				if mode == "Clone" then
-					return AssetsDealer.Bakery[category][name]:Clone()
-				end
-				return AssetsDealer.Bakery[category][name]
-			end
-			
-			local y = d
-			if mode == "Clone" then
-				AssetsDealer.Bakery[category][name] = d
-				y = d:Clone()
-			end
-			if mode == "Require" then
-				y = require(d)
-			end
-			
-			AssetsDealer.Bakery[category][name] = y
-			
-			assert(y,`Couldn't find asset of category "{category}" with name "{name}"`)
-			return y :: any
-		end
-	end
+            -- Immediately clone or require without caching
+            if mode == "Clone" then
+                return d:Clone()
+            elseif mode == "Require" and d:IsA("ModuleScript") then
+                return require(d)
+            end
+            return d
+        end
+    end
 
 	warn(`Couldn't find asset of category "{category}" with name "{name}"`)
 	return nil
