@@ -4,7 +4,7 @@ BaseEntity.__type = ""
 
 -- TODO: Add trove
 
--- Services 
+-- Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -14,29 +14,32 @@ local Game = require(ReplicatedStorage.Utility.Game)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local Trove = require(ReplicatedStorage.Packages.trove)
 
-function BaseEntity.new(rig,id: number)
-	if not EntityUtility.IsHealthy(rig) then warn(`Rig "{rig.Name}" is not alive, cannot create base entity instance`) return end
+function BaseEntity.new(rig, id: number)
+	if not EntityUtility.IsHealthy(rig) then
+		warn(`Rig "{rig.Name}" is not alive, cannot create base entity instance`)
+		return
+	end
 
 	local self = setmetatable({}, BaseEntity)
 
 	assert(rig, "Rig is nil")
-	assert(id,"ID is nil")
-	
-	assert(typeof(rig) == "Instance" and rig:IsA("Model"),"Rig is not a model")
-	assert(typeof(id) == "number","ID is not a number")
+	assert(id, "ID is nil")
+
+	assert(typeof(rig) == "Instance" and rig:IsA("Model"), "Rig is not a model")
+	assert(typeof(id) == "number", "ID is not a number")
 
 	self.rig = rig
 	self.id = id
 	self.root = rig:FindFirstChild("HumanoidRootPart")
 	self.height = 0 :: number
-	
+
 	self.trove = Trove.new()
 
 	-- Events
 	self.events = {
 		Died = Signal.new(),
 		ChildAdded = Signal.new(),
-		ChildRemoved = Signal.new()
+		ChildRemoved = Signal.new(),
 	}
 
 	self:setupBase()
@@ -60,22 +63,20 @@ end
 
 function BaseEntity:setupRig()
 	-- Rig's humanoid
-	self.humanoid = self.rig:WaitForChild("Humanoid") 
+	self.humanoid = self.rig:WaitForChild("Humanoid")
 		or warn(`Entity "{self.rig.Name}" with id "{self.id}" has no humanoid.`)
 	-- Rig's animator
-	if not self.humanoid:WaitForChild("Animator") then 
+	if not self.humanoid:WaitForChild("Animator") then
 		warn(`Entity "{self.rig.Name}" with id "{self.id}" has no animator.`)
 	end
 	-- Rig's primary part
-	self.root = self.rig.PrimaryPart 
-		or warn(`Entity "{self.rig.Name}" with id "{self.id}" has no primary part.`)
+	self.root = self.rig.PrimaryPart or warn(`Entity "{self.rig.Name}" with id "{self.id}" has no primary part.`)
 	-- Height of the rig
 	self.height = self.rig:GetExtentsSize().Y :: number
 
 	-- TODO: Possible performance issue?
 	self.trove:Add(RunService.Heartbeat:Connect(function()
 		if not EntityUtility.IsAlive(self.rig) or not EntityUtility.IsHealthy(self.rig) then
-			warn("DEMACIA")
 			self.events.Died:Fire()
 		end
 	end))
@@ -88,8 +89,10 @@ function BaseEntity:setupRig()
 end
 
 function BaseEntity:destroyBase()
-	if not self.trove then warn("destroyBase called twice on BaseEntity") end
-	
+	if not self.trove then
+		warn("destroyBase called twice on BaseEntity")
+	end
+
 	self.trove:Destroy()
 	-- TODO: This code repeats often in a lot of classes
 	for _, event: any in self.events do

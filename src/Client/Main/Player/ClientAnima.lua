@@ -3,7 +3,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Metatable
 local BaseAnima = require(ReplicatedStorage.Classes.Bases.BaseAnima)
-local ClientAnima = setmetatable({}, {__index = BaseAnima})
+local ClientAnima = setmetatable({}, { __index = BaseAnima })
 ClientAnima.__index = ClientAnima
 -- Modules
 local Signal = require(ReplicatedStorage.Packages.signal)
@@ -14,7 +14,9 @@ local Player = Players.LocalPlayer
 ClientAnima.Singleton = nil
 
 function ClientAnima.new()
-	if ClientAnima.Singleton then error("ClientAnima: Singleton already exists.") end
+	if ClientAnima.Singleton then
+		error("ClientAnima: Singleton already exists.")
+	end
 	local self = setmetatable(BaseAnima.new(Player), ClientAnima)
 
 	self:setup()
@@ -30,6 +32,8 @@ function ClientAnima:get()
 end
 
 function ClientAnima:setupEntity(entity)
+	warn(`Loading entity for local player`)
+
 	self.entity = entity
 	self.events.EntityAdded:Fire(self.entity)
 end
@@ -55,7 +59,7 @@ function ClientAnima:destroy()
 end
 
 function ClientAnima.Init()
-	ClientAnima.Singleton = ClientAnima.new()
+	ClientAnima:get()
 end
 
 return ClientAnima

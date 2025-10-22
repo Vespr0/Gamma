@@ -2,14 +2,15 @@ return function()
 	local MobSpawner = require(script.Parent.Parent.Parent.Main.Mobs.MobSpawner)
 	local SoldierSpiri = require(script.Parent.Parent.Mobs.Spiri.Classes.Soldier)
 
-	local _,entity,_ = MobSpawner.Spawn("HockeyMaskGuy", CFrame.new(0,5,0),"Yellow")
-	entity.backpack:equipTool(1)
+	-- for i = 1, 2 do
+	-- 	task.wait(1)
+	-- 	local _, entity, _ =
+	-- 		MobSpawner.Spawn("HockeyMaskGuy", CFrame.new(i * 2, 5, 0), i % 2 == 0 and "Yellow" or "Blue")
 
-	SoldierSpiri.new(entity, {
-		
-	})
+	-- 	SoldierSpiri.new(entity, "Soldier", {})
+	-- end
 
-	local _,entity,_ = MobSpawner.Spawn("HockeyMaskGuy", CFrame.new(0,5,5),"Blue")
+	-- local _, entity, _ = MobSpawner.Spawn("HockeyMaskGuy", CFrame.new(0, 5, 5), "Blue")
 
 	-- local walkers = {}
 	-- for i = 1, 3 do
@@ -40,7 +41,7 @@ return function()
 	-- 			-- 		local root = mobEntity.root
 	-- 			-- 		local direction = CFrame.lookAt(root.Position, walkers[1].root.Position).LookVector
 	-- 			-- 		mobEntity.rig:SetAttribute("LookDirection", direction)
-		
+
 	-- 			-- 		local mindController = mobEntity.backpack.abilities:getMindController("Minigun", "Projectile", 1)
 	-- 			-- 		mindController:Fire("Fire", direction,root.Position+Vector3.yAxis*1.5)
 	-- 			-- 		task.wait(.2) -- Fire every 2 seconds
@@ -49,7 +50,7 @@ return function()
 	-- end
 
 	-- -- local ProjectileManager = require(game.ReplicatedStorage.Abilities.ProjectileManager)
-	
+
 	-- -- while true do
 	-- -- 	task.spawn(function()
 	-- -- 		ProjectileManager.Dynamic({
@@ -61,4 +62,6 @@ return function()
 	-- -- 	end)
 	-- -- 	task.wait(.1)
 	-- -- end
+
+	-- local VoxelDestruction = require(game.ReplicatedStorage.StaticPackages.VoxelDestruction)
 end

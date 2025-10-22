@@ -10,13 +10,15 @@ local Test = require(script.Test)
 
 local function loadModules()
 	Loading.LoadAssetsDealer()
-    Loading.LoadModules(script.Parent,{script})
+	Loading.LoadModules(script.Parent, { script, script.Test })
 end
-	
+
 Loader.Init = function()
 	loadModules()
-	
-	if RunService:IsStudio() then Test() end
+
+	if RunService:IsStudio() then
+		Test()
+	end
 end
 
 return Loader

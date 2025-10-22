@@ -7,7 +7,7 @@ local RunService = game:GetService("RunService")
 local TIMEOUT = 50
 
 -- Function to wait for a instance that may not be instanced yet
-function Safety.WaitForInstance(source,name)
+function Safety.WaitForInstance(source: any, name: string)
 	local t = 0
 	local value
 	repeat

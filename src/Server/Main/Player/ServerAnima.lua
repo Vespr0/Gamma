@@ -3,7 +3,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Metatable
 local BaseAnima = require(ReplicatedStorage.Classes.Bases.BaseAnima)
-local ServerAnima = setmetatable({}, {__index = BaseAnima})
+local ServerAnima = setmetatable({}, { __index = BaseAnima })
 ServerAnima.__index = ServerAnima
 -- Modules
 local Signal = require(ReplicatedStorage.Packages.signal)
@@ -17,7 +17,9 @@ ServerAnima.GlobalAdded = Signal.new()
 ServerAnima.GlobalRemoved = Signal.new()
 
 function ServerAnima.Get(userId: number)
-	if (typeof(userId) ~= "number") then error("userId must be a number") end
+	if typeof(userId) ~= "number" then
+		error("userId must be a number")
+	end
 	return (ServerAnima.Instances[userId] or error(`No server anima instance found with userId "{userId}"`))
 end
 
@@ -25,7 +27,9 @@ function ServerAnima.new(player: Player)
 	local self = setmetatable(BaseAnima.new(player), ServerAnima)
 
 	-- Check if player already has a server anima instance
-	if (ServerAnima.Instances[self.userId]) then error("Player already has a server anima instance") end
+	if ServerAnima.Instances[self.userId] then
+		error("Player already has a server anima instance")
+	end
 
 	self.userId = player.UserId :: number
 	self.entity = nil
@@ -49,14 +53,14 @@ end
 
 function ServerAnima:loadCharacter()
 	warn(`Loading character for player "{self.player.UserId}"`)
-	local rig = AssetsDealer.Get("Rigs","Human","Clone")
+	local rig = AssetsDealer.Get("Rigs", "Human", "Clone")
 	rig.Name = self.player.Name
 	-- Move the rig to a temporary folder
 	rig.Parent = game:GetService("ServerStorage"):WaitForChild("Temp")
 	-- local humanoid = rig:WaitForChild("Humanoid")
 	-- humanoid.Health = humanoid.MaxHealth -- TODO: I have to do this, i have no fucking clue why
 
-	self.entity = ServerEntity.new(rig,self.player,"Blue")
+	self.entity = ServerEntity.new(rig, self.player, "Blue")
 	self.events.EntityAdded:Fire(self.entity)
 	self.player.Character = rig
 end

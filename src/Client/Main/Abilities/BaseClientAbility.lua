@@ -1,10 +1,10 @@
--- Services 
+-- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BaseAbility = require(ReplicatedStorage.Abilities.BaseAbility)
-local BaseClientAbility = setmetatable({}, {__index = BaseAbility})
+local BaseClientAbility = setmetatable({}, { __index = BaseAbility })
 BaseClientAbility.__index = BaseClientAbility
 
 -- Modules
@@ -19,28 +19,40 @@ local AbilitiesMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManag
 local IS_SERVER = RunService:IsServer()
 
 function BaseClientAbility.new(name: string, entity: TypeEntity.BaseEntity, tool: Tool, abilityConfig)
-    assert(typeof(name) == "string", "Invalid call, ability name must be a string.")
+	assert(typeof(name) == "string", "Invalid call, ability name must be a string.")
 
-    local self = setmetatable(BaseAbility.new(name,entity,tool,abilityConfig) :: TypeAbility.BaseClientAbility, BaseClientAbility)
+	local self = setmetatable(
+		BaseAbility.new(name, entity, tool, abilityConfig) :: TypeAbility.BaseClientAbility,
+		BaseClientAbility
+	)
 
 	self:setup()
 
-    return self
+	return self
 end
 
 function BaseClientAbility:checkInputConditions()
-	if not self.entity then return false end
-	if not self.entity.backpack then return false end
-	
-	local dummyTool = self.entity.backpack:getDummyTool()
-	if not dummyTool then return false end
+	if not self.entity then
+		return false
+	end
+	if not self.entity.backpack then
+		return false
+	end
 
-	if dummyTool:GetAttribute("ID") ~= self.tool:GetAttribute("ID") then return false end
+	local dummyTool = self.entity.backpack:getDummyTool()
+	if not dummyTool then
+		return false
+	end
+
+	if dummyTool:GetAttribute("ID") ~= self.tool:GetAttribute("ID") then
+		return false
+	end
 
 	return true
 end
 
-function BaseClientAbility:loadAnimation(name: string,animationDirectory: string)
+function BaseClientAbility:loadAnimation(name: string, animationDirectory: string)
+	print(animationDirectory)
 	return self.entity.animator:load(self.animationPreamble, name, animationDirectory)
 end
 
@@ -67,18 +79,24 @@ end
 function BaseClientAbility:setupReplication()
 	-- Replication
 	self.Replicated = Signal.new()
-	AbilitiesMiddleware.ReadAbility:Connect(function(entityID: number,abilityName: string, toolIndex: number, ...)
-		if abilityName ~= self.name or toolIndex ~= self.tool:GetAttribute("Index") then return end
+	AbilitiesMiddleware.ReadAbility:Connect(function(entityID: number, abilityName: string, toolIndex: number, ...)
+		if abilityName ~= self.name or toolIndex ~= self.tool:GetAttribute("Index") then
+			return
+		end
 		self.Replicated:Fire(...)
 	end)
 end
 
 function BaseClientAbility:setup()
-	if not self.entity then error("Entity is missing") end
-	if not self.entity.animator then error("Entity animator is missing") end
+	if not self.entity then
+		error("Entity is missing")
+	end
+	if not self.entity.animator then
+		error("Entity animator is missing")
+	end
 
-	self.animationPreamble = "Tool".."-"..self.tool:GetAttribute("ID").."-"..self.tool.Name		
-	
+	self.animationPreamble = "Tool" .. "-" .. self.tool:GetAttribute("ID") .. "-" .. self.tool.Name
+
 	-- Setup replication
 	self:setupReplication()
 
@@ -103,23 +121,27 @@ function BaseClientAbility:setup()
 		end
 
 		-- Tool events
-		self.trove:Add(backpack.events.ToolEquip:Connect(function(_,index: number)
-			if index ~= self.tool:GetAttribute("Index") then return end
+		self.trove:Add(backpack.events.ToolEquip:Connect(function(_, index: number)
+			if index ~= self.tool:GetAttribute("Index") then
+				return
+			end
 			self.events.Equipped:Fire()
 		end))
-		self.trove:Add(backpack.events.ToolUnequip:Connect(function(_,index: number)
-			if index ~= self.tool:GetAttribute("Index") then return end
+		self.trove:Add(backpack.events.ToolUnequip:Connect(function(_, index: number)
+			if index ~= self.tool:GetAttribute("Index") then
+				return
+			end
 			self.events.Unequipped:Fire()
 		end))
 
 		-- Hold animation
 		assert(self.toolConfig.animations.hold, `Hold animation is missing from tool "{self.tool.Name}".`)
-		self:loadAnimation("Hold",self.toolConfig.animations.hold)
+		self:loadAnimation("Hold", self.toolConfig.animations.hold)
 		self.events.Equipped:Connect(function()
-			self:playAnimation("Hold",0)
+			self:playAnimation("Hold", 0)
 		end)
 		self.events.Unequipped:Connect(function()
-			self:stopAnimation("Hold",0)
+			self:stopAnimation("Hold", 0)
 		end)
 	end)
 end
