@@ -31,3 +31,4 @@ spring = "nightcycle/spring@1.0.0"
 
 # Datastore
 suphisdatastoremodule = "skylord-103/suphisdatastoremodule@1.0.0"
+btreesv5 = "onv-il/btreesv5@5.0.18"

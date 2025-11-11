@@ -117,7 +117,7 @@ function ClientAbilityProjectile:fire(direction)
 	self:playFireSound()
 
 	if self.abilityConfig.recoil and self.entity.isLocalPlayerInstance then
-		self.entity.animationController:GetModule("Recoil"):Apply(self.abilityConfig.recoil.vertical, 0.2)
+		-- self.entity.animationController:GetModule("Recoil"):Apply(self.abilityConfig.recoil.vertical, 0.2)
 		Recoil:applyRecoil(self.abilityConfig.recoil.vertical, self.abilityConfig.recoil.horizontal)
 	end
 	-- local root = self.entity.root

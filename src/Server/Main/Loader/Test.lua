@@ -2,13 +2,13 @@ return function()
 	local MobSpawner = require(script.Parent.Parent.Parent.Main.Mobs.MobSpawner)
 	local SoldierSpiri = require(script.Parent.Parent.Mobs.Spiri.Classes.Soldier)
 
-	-- for i = 1, 2 do
-	-- 	task.wait(1)
-	-- 	local _, entity, _ =
-	-- 		MobSpawner.Spawn("HockeyMaskGuy", CFrame.new(i * 2, 5, 0), i % 2 == 0 and "Yellow" or "Blue")
+	for i = 1, 2 do
+		task.wait(1)
+		local _, entity, _ =
+			MobSpawner.Spawn("HockeyMaskGuy", CFrame.new(i * 2, 5, 0), i % 2 == 0 and "Yellow" or "Blue")
 
-	-- 	SoldierSpiri.new(entity, "Soldier", {})
-	-- end
+		SoldierSpiri.new(entity, "Soldier", {})
+	end
 
 	-- local _, entity, _ = MobSpawner.Spawn("HockeyMaskGuy", CFrame.new(0, 5, 5), "Blue")
 

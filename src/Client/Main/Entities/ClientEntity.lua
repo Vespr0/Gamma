@@ -18,6 +18,8 @@ local ClientMovement = require(script.Parent.Parent.Entities.ClientMovement)
 local ViewmodelManager = require(script.Parent.Parent.Character.ViewmodelManager)
 local ClientAppearance = require(script.Parent.ClientAppearance)
 local ClientLookAt = require(script.Parent.ClientLookAt)
+local ProceduralAnimationController = require(script.Parent.ProceduralAnimation.ProceduralAnimationController)
+local ProceduralCrouching = require(script.Parent.ProceduralAnimation.Components.ProceduralCrouching)
 
 -- Variables
 local LocalPlayer = Players.LocalPlayer
@@ -63,15 +65,9 @@ function ClientEntity:setupViewmodel()
 	self.viewmodelManager = ViewmodelManager.new(self)
 end
 
-function ClientEntity:setupAnimationController()
-	self.animationController = ProceduralAnimationController.new(self.rig) -- TODO
-	self.animationController:Start()
-
-	self.trove:Add(self.rig.AttributeChanged:Connect(function(attribute)
-		if attribute == "Crouching" then
-			self.animationController:SetCrouch(self.rig:GetAttribute(attribute))
-		end
-	end))
+function ClientEntity:setupProceduralAnimations()
+	self.animationController = ProceduralAnimationController.new(self.rig)
+	self.animationController:LoadComponent(ProceduralCrouching)
 end
 
 function ClientEntity:setup()
@@ -80,7 +76,7 @@ function ClientEntity:setup()
 	self:setupMovement()
 	self:setupAppearance()
 	self:setupViewmodel()
-	self:setupAnimationController()
+	self:setupProceduralAnimations()
 	self:setupBackpack()
 
 	self.events.Died:Connect(function()
@@ -113,7 +109,7 @@ function ClientEntity:setupAppearance()
 end
 
 function ClientEntity:destroy()
-	self.animationController:destroy()
+	self.animationController:Destroy()
 
 	if self.Recoil then
 		self.Recoil:destroy()
