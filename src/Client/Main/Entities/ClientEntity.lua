@@ -67,7 +67,7 @@ end
 
 function ClientEntity:setupProceduralAnimations()
 	self.animationController = ProceduralAnimationController.new(self.rig)
-	self.animationController:LoadComponent(ProceduralCrouching)
+	self.animationController:loadComponent(ProceduralCrouching)
 end
 
 function ClientEntity:setup()
@@ -109,11 +109,11 @@ function ClientEntity:setupAppearance()
 end
 
 function ClientEntity:destroy()
-	self.animationController:Destroy()
-
 	if self.Recoil then
 		self.Recoil:destroy()
 	end
+
+	self.animationController:destroy()
 
 	ClientEntity.Instances[tostring(self.id)] = nil
 

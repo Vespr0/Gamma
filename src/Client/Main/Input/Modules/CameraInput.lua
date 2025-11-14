@@ -8,7 +8,7 @@ local ClientAnima = require(script.Parent.Parent.Parent.Player.ClientAnima):get(
 
 local KEYS = {
 	-- PC
-	Enum.KeyCode.P,
+	Enum.KeyCode.M,
 	-- Controller
 	Enum.KeyCode.ButtonR3, -- RSB (Right Stick Button)
 }
