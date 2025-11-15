@@ -14,7 +14,6 @@ local Inputs = require(Player.PlayerScripts.Main.Input.Inputs):get()
 local SoundManager = require(Player.PlayerScripts.Main.Sound.SoundManager)
 local BulletHoleVFX = require(Player.PlayerScripts.Main.Visual.VFXManager).GetModule("BulletHole")
 local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
-local Recoil = require(Player.PlayerScripts.Main.Player.Recoil):get()
 
 local ClientAbilityProjectile = setmetatable({}, { __index = BaseClientAbility })
 ClientAbilityProjectile.__index = ClientAbilityProjectile
@@ -26,6 +25,8 @@ function ClientAbilityProjectile.new(entity, tool, config)
 	)
 
 	self:setup()
+
+	self.proceduralRecoil = self.entity.proceduralAnimationController:getComponent("ProceduralRecoil")
 
 	self.lastFireTime = os.clock()
 	print(self.entity)
@@ -117,8 +118,7 @@ function ClientAbilityProjectile:fire(direction)
 	self:playFireSound()
 
 	if self.abilityConfig.recoil and self.entity.isLocalPlayerInstance then
-		-- self.entity.animationController:GetModule("Recoil"):Apply(self.abilityConfig.recoil.vertical, 0.2)
-		Recoil:applyRecoil(self.abilityConfig.recoil.vertical, self.abilityConfig.recoil.horizontal)
+		self.proceduralRecoil:applyRecoil(self.abilityConfig.recoil.vertical, self.abilityConfig.recoil.horizontal)
 	end
 	-- local root = self.entity.root
 

@@ -20,6 +20,7 @@ local ClientAppearance = require(script.Parent.ClientAppearance)
 local ClientLookAt = require(script.Parent.ClientLookAt)
 local ProceduralAnimationController = require(script.Parent.ProceduralAnimation.ProceduralAnimationController)
 local ProceduralCrouching = require(script.Parent.ProceduralAnimation.Components.ProceduralCrouching)
+local ProceduralRecoil = require(script.Parent.ProceduralAnimation.Components.ProceduralRecoil)
 
 -- Variables
 local LocalPlayer = Players.LocalPlayer
@@ -66,8 +67,9 @@ function ClientEntity:setupViewmodel()
 end
 
 function ClientEntity:setupProceduralAnimations()
-	self.animationController = ProceduralAnimationController.new(self.rig)
-	self.animationController:loadComponent(ProceduralCrouching)
+	self.proceduralAnimationController = ProceduralAnimationController.new(self.rig)
+	self.proceduralAnimationController:loadComponent(ProceduralCrouching)
+	self.proceduralAnimationController:loadComponent(ProceduralRecoil)
 end
 
 function ClientEntity:setup()
@@ -113,7 +115,7 @@ function ClientEntity:destroy()
 		self.Recoil:destroy()
 	end
 
-	self.animationController:destroy()
+	self.proceduralAnimationController:destroy()
 
 	ClientEntity.Instances[tostring(self.id)] = nil
 
