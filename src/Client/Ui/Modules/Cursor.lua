@@ -6,30 +6,32 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local CursorComponent = require(ReplicatedStorage.UI.Components.Cursor)
+
 UserInputService.MouseIconEnabled = false
 
 function Cursor.InitUi(ui)
-	local peek = ui.Fusion.peek
-	-- Create the cursor component from the scope
-	local component = ui.scope:CursorComponent({
-		Spread = ui.scope:Value(4),
-		Utility = ui,
-	})
+	local spreadValue = ui.scope:Value(4)
+	local positionValue = ui.scope:Value(UDim2.fromOffset(0, 0))
 
 	-- Get the CursorGui
 	local playerGui = ui.playerGui
 	local CursorGui = playerGui:FindFirstChild("Cursor")
 
-	-- Parent the cursor to the CursorGui
-	component.Container.Parent = CursorGui
+	-- Create the cursor component from the scope
+	local cursorInstance = CursorComponent(ui.scope, {
+		Parent = CursorGui,
+		Position = positionValue,
+		Spread = spreadValue,
+	})
 
 	-- Store reference to the spread value for external access
-	Cursor.Spread = component.Spread
+	Cursor.Spread = spreadValue
 
 	-- Move the cursor with the mouse
 	local function mouseMoved()
 		local position = ui.GetMousePosition(false)
-		component.Container.Position = UDim2.fromOffset(position.X, position.Y)
+		positionValue:set(UDim2.fromOffset(position.X, position.Y))
 	end
 
 	-- Connect events and add to trove for cleanup

@@ -28,15 +28,15 @@ local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
 
 local function disableCoreUi()
-    repeat
-        local success = pcall(function()
-            -- Disable resetting (client side)
-            StarterGUI:SetCore("ResetButtonCallback", RunService:IsStudio())
-            -- Disable backpack
-            StarterGUI:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
-        end)
-        task.wait()
-    until success
+	repeat
+		local success = pcall(function()
+			-- Disable resetting (client side)
+			StarterGUI:SetCore("ResetButtonCallback", RunService:IsStudio())
+			-- Disable backpack
+			StarterGUI:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+		end)
+		task.wait()
+	until success
 end
 
 local function initializeCharacterDependantModule(scope, module)
@@ -54,24 +54,13 @@ end
 
 local function initializeModules()
 	local Modules = script.Parent.Modules
-	local Components = script.Parent.Components
-
-	-- Create a table to hold all the components
-	local componentsApi = {}
-	for _, componentModule in ipairs(Components:GetChildren()) do
-		if componentModule:IsA("ModuleScript") then
-			local componentName = componentModule.Name
-			local component = require(componentModule)
-			componentsApi[componentName] = component
-		end
-	end
 
 	for _, module in pairs(Modules:GetChildren()) do
 		if module:IsA("ModuleScript") then
 			local success, err = pcall(function()
 				local module = require(module)
-				-- Create a new scope for each module and inject components
-				local moduleScope = Fusion.scoped(Fusion, componentsApi)
+				-- Create a new scope for each modul
+				local moduleScope = Fusion.scoped(Fusion)
 
 				if module.CharacterDependant then
 					initializeCharacterDependantModule(moduleScope, module)
@@ -101,9 +90,9 @@ end
 -- end
 
 local function setup()
-    disableCoreUi()
-    initializeModules()
-    -- 	setupIris()
+	disableCoreUi()
+	initializeModules()
+	-- 	setupIris()
 end
 
 function Ui.GetUtility(scope: any, characterDependant: boolean)
@@ -114,25 +103,25 @@ function Ui.GetUtility(scope: any, characterDependant: boolean)
 	utility.trove = Trove.new()
 	utility.Fusion = Fusion
 	utility.scope = scope
-    utility.player = Player
-    utility.mouse = Mouse
-    utility.playerGui = Player:WaitForChild("PlayerGui")
+	utility.player = Player
+	utility.mouse = Mouse
+	utility.playerGui = Player:WaitForChild("PlayerGui")
 
 	utility.anima = ClientAnima:get()
 
-    utility.GetGui = function(name)
-        return utility.playerGui:WaitForChild(name)
-    end
+	utility.GetGui = function(name)
+		return utility.playerGui:WaitForChild(name)
+	end
 
-    utility.MakeTemplate = function(uiElement)
-        local clone = uiElement:Clone()
-        uiElement:Destroy()
-        return clone
+	utility.MakeTemplate = function(uiElement)
+		local clone = uiElement:Clone()
+		uiElement:Destroy()
+		return clone
 	end
 
 	utility.GetMousePosition = function(isCorrectedForInset: boolean)
 		local mousePosition = UserInputService:GetMouseLocation()
-		
+
 		if isCorrectedForInset then
 			local mousePosition = UserInputService:GetMouseLocation()
 			local guiInset = GuiService:GetGuiInset()
@@ -140,14 +129,14 @@ function Ui.GetUtility(scope: any, characterDependant: boolean)
 			-- Correct the Y position by subtracting the height of the top-bar
 			local correctedY = mousePosition.Y - guiInset.Y
 
-			print(mousePosition.Y,correctedY)
-			
+			print(mousePosition.Y, correctedY)
+
 			return Vector2.new(mousePosition.X, correctedY)
 		else
 			return mousePosition
 		end
 	end
-	
+
 	utility.events = {
 		ToolAdded = Signal.new(),
 		ToolRemoved = Signal.new(),
@@ -158,43 +147,47 @@ function Ui.GetUtility(scope: any, characterDependant: boolean)
 	-- Update the character backpack
 	local trove
 	local function updateBackpack(backpack)
-		if trove then trove:Destroy() end
+		if trove then
+			trove:Destroy()
+		end
 		trove = Trove.new()
 
 		utility.backpack = backpack
 
 		trove:Add(backpack.events.ToolAdded:Connect(function(tool: Tool, index: number)
-			utility.events.ToolAdded:Fire(tool,index)
+			utility.events.ToolAdded:Fire(tool, index)
 		end))
 
 		trove:Add(backpack.events.ToolRemoved:Connect(function(tool: Tool, index: number)
-			utility.events.ToolRemoved:Fire(tool,index)
+			utility.events.ToolRemoved:Fire(tool, index)
 		end))
 
 		trove:Add(backpack.events.ToolEquip:Connect(function(tool: Tool, index: number)
-			utility.events.ToolEquip:Fire(tool,index)
+			utility.events.ToolEquip:Fire(tool, index)
 		end))
 
 		trove:Add(backpack.events.ToolUnequip:Connect(function(tool: Tool, index: number)
-			utility.events.ToolUnequip:Fire(tool,index)
+			utility.events.ToolUnequip:Fire(tool, index)
 		end))
 	end
 
 	if ClientBackpack.LocalPlayerInstance then
 		updateBackpack(ClientBackpack.LocalPlayerInstance)
 	end
-	
+
 	ClientBackpack.GlobalAdded:Connect(function(backpack)
-		if not backpack.isLocalPlayerInstance then return end
+		if not backpack.isLocalPlayerInstance then
+			return
+		end
 
 		updateBackpack(backpack)
 	end)
 
-    return utility
+	return utility
 end
 
 function Ui.Init()
-    setup()
+	setup()
 end
 
 return Ui

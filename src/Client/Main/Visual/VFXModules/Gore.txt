@@ -6,8 +6,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AssetService = game:GetService("AssetService")
 
 -- Modules
-local Noise = require(ReplicatedStorage.Shared.Utility.Noise)
-local AssetsDealer = require(ReplicatedStorage.Shared.AssetsDealer)
+local Noise = require(ReplicatedStorage.Utility.Noise)
+local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
 
 -- Constants
 local RAYCAST_PARAMS = RaycastParams.new()

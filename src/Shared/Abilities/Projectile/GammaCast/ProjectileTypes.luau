@@ -9,8 +9,8 @@ return {
 	Default = DEFAULT_SETTINGS,
 	Brick = {
 		range = DEFAULT_SETTINGS.range,
-		speed = 150,
-		gravity = 20,
+		speed = 100,
+		gravity = 100,
 		length = DEFAULT_SETTINGS.range,
 		timeStep = DEFAULT_SETTINGS.timeStep,
 		hitscan = false,

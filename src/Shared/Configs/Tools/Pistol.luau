@@ -5,7 +5,7 @@ return {
 	abilities = {
 		shoot = {
 			name = "Projectile",
-			cooldownDuration = 1,
+			cooldownDuration = 0.4,
 			spread = 2,
 			damage = 10,
 			inputs = {

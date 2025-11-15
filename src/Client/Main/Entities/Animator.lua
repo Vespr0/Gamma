@@ -28,16 +28,16 @@ end
 
 function Animator.Print()
 	print("Animator Instances:")
-	for _,instance in Animator.Instances do
+	for _, instance in Animator.Instances do
 		print(`"{instance.rig.Name}" : "{instance.id}"`)
 	end
 end
 
 function Animator.new(rig, isLocalPlayerInstance)
 	local id = rig:GetAttribute("ID")
-	assert(id,`ID Attribute of rig "{rig.Name}" is nil.`)
+	assert(id, `ID Attribute of rig "{rig.Name}" is nil.`)
 	assert(not Animator.Get(id), `Animator instance with ID "{id}" already exists. Attempt on rig "{rig.Name}".`)
-	for _,animator in Animator.Instances do
+	for _, animator in Animator.Instances do
 		if animator.rig == rig then
 			error(`An animator instance for rig "{rig.Name}" has already been created and is active.`)
 		end
@@ -55,49 +55,53 @@ function Animator.new(rig, isLocalPlayerInstance)
 
 	self.wasMoving = false
 	self.wasRunning = false
-	self.freeFalling = false
 
 	self:connectEvents()
 	self:setupAnimations()
-	
+
 	-- Play idle by default
 	self:play("Base", "Idle")
 
 	self.isLocalPlayerInstance = isLocalPlayerInstance
-	self.key = isLocalPlayerInstance and "Local" or self.id 
+	self.key = isLocalPlayerInstance and "Local" or self.id
 	Animator.Instances[self.key] = self
 	Animator.GlobalAdded:Fire(self)
-	
+
 	return self
 end
 
-function Animator:setupAnimations()	
+function Animator:setupAnimations()
 	-- Load base animations
-	self:load("Base", "Idle", "Movement/Generic/Idle")
-	self:load("Base", "Walk", "Movement/Generic/Walk")
-	self:load("Base", "Run", "Movement/Generic/Run")
-	self:load("Base", "Jump", "Movement/Generic/Jump")
-	self:load("Base", "FreeFalling", "Movement/Generic/FreeFalling")
+	self:load("Base", "Idle", "Movement/Generic/Idle", "Idle")
+	self:load("Base", "Walk", "Movement/Generic/Walk", "Movement")
+	self:load("Base", "Run", "Movement/Generic/Run", "Movement")
+	self:load("Base", "Jump", "Movement/Generic/Jump", "Action")
+	self:load("Base", "Freefall", "Movement/Generic/Freefall", "Idle")
 	-- self:load("Base","Hold","Tools/Generic/Hold")
 end
 
-function Animator:doesAnimationExist(folderName:string, actionName:string)
+function Animator:doesAnimationExist(folderName: string, actionName: string)
 	return self.loaded[folderName] and self.loaded[folderName][actionName]
 end
 
-function Animator:load(folderName:string, actionName:string, assetDirectory:string)
+function Animator:load(folderName: string, actionName: string, assetDirectory: string, priority: string)
 	local animation = AssetsDealer.GetDir("Animations", assetDirectory)
 	if not animation then
 		warn(`Couldn't find animation with directory: "{assetDirectory}"`)
 		return
 	end
-	
-	if not self.loaded[folderName] then self.loaded[folderName] = {} end
+
+	if not self.loaded[folderName] then
+		self.loaded[folderName] = {}
+	end
 
 	self.loaded[folderName][actionName] = self.animator:LoadAnimation(animation)
+	if priority then
+		self.loaded[folderName][actionName].Priority = Enum.AnimationPriority[priority]
+	end
 end
 
-function Animator:play(folderName:string, actionName:string, fadeTime:number, weight:number, speed:number)
+function Animator:play(folderName: string, actionName: string, fadeTime: number, weight: number, speed: number)
 	if not self:doesAnimationExist(folderName, actionName) then
 		warn(`No loaded animation to play with folder name: "{folderName}" and action name: "{actionName}".`)
 		return
@@ -105,7 +109,7 @@ function Animator:play(folderName:string, actionName:string, fadeTime:number, we
 	self.loaded[folderName][actionName]:Play(fadeTime, weight, speed)
 end
 
-function Animator:stop(folderName:string, actionName: string, fadeTime: number)
+function Animator:stop(folderName: string, actionName: string, fadeTime: number)
 	if not self:doesAnimationExist(folderName, actionName) then
 		warn(`No loaded animation to stop with folder name: "{folderName}" and action name: "{actionName}".`)
 		return
@@ -113,7 +117,7 @@ function Animator:stop(folderName:string, actionName: string, fadeTime: number)
 	self.loaded[folderName][actionName]:Stop(fadeTime)
 end
 
-function Animator:adjustSpeed(folderName:string, actionName: string, speed: number)
+function Animator:adjustSpeed(folderName: string, actionName: string, speed: number)
 	if not self:doesAnimationExist(folderName, actionName) then
 		warn(`No loaded animation to adjust speed with folder name: "{folderName}" and action name: "{actionName}".`)
 		return
@@ -130,10 +134,6 @@ function Animator:connectEvents()
 		self:handleRunning(speed)
 	end))
 
-	self.trove:Add(self.humanoid.FreeFalling:Connect(function(isActive)
-		self:handleFreeFalling(isActive)
-	end))
-
 	self.humanoid.Died:Connect(function()
 		self:destroy()
 	end)
@@ -142,14 +142,20 @@ end
 function Animator:handleStateChange(old, new)
 	if old == Enum.HumanoidStateType.None then
 		self:stop("Base", "Idle", FADING_OUT_FACTOR)
+	elseif old == Enum.HumanoidStateType.Freefall then
+		self:stop("Base", "Freefall", FADING_OUT_FACTOR)
 	end
 
 	if new == Enum.HumanoidStateType.None then
 		self:play("Base", "Idle", FADING_IN_FACTOR * 2)
 	elseif new == Enum.HumanoidStateType.Jumping then
-		self:play("Base", "Jump", FADING_IN_FACTOR * 2)
+		self:play("Base", "Jump", FADING_IN_FACTOR / 2)
 	elseif new == Enum.HumanoidStateType.Landed then
 		self:play("Base", "Idle", FADING_IN_FACTOR)
+	elseif new == Enum.HumanoidStateType.Freefall then
+		self:play("Base", "Freefall", FADING_IN_FACTOR)
+	elseif new == Enum.HumanoidStateType.Running then
+		-- No need to do anything, :handleRunning will take over
 	end
 end
 
@@ -179,7 +185,16 @@ function Animator:handleRunning(speed)
 		end
 	end
 
-	if self.freeFalling then toggleRunningAnimations(false, false) return end
+	local currentState = self.humanoid:GetState()
+	if
+		currentState == Enum.HumanoidStateType.Freefall
+		or currentState == Enum.HumanoidStateType.Jumping
+		or currentState == Enum.HumanoidStateType.Seated -- (Good to add)
+		or currentState == Enum.HumanoidStateType.Landed -- (Landed is a brief state)
+	then
+		toggleRunningAnimations(false, false)
+		return
+	end
 
 	if speed > 14 then
 		toggleRunningAnimations(true, false)
@@ -188,15 +203,6 @@ function Animator:handleRunning(speed)
 	else
 		toggleRunningAnimations(false, false)
 		self:play("Base", "Idle", FADING_IN_FACTOR)
-	end
-end
-
-function Animator:handleFreeFalling(isActive)
-	self.freeFalling = isActive
-	if self.freeFalling then
-		self:play("Base", "FreeFalling", FADING_IN_FACTOR)
-	else
-		self:stop("Base", "FreeFalling", FADING_OUT_FACTOR)
 	end
 end
 

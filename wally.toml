@@ -7,7 +7,7 @@ realm = "shared"
 [dependencies]
 signal = "sleitnick/signal@^1"
 TableUtil = "sleitnick/table-util@^1"
-fusion = "acecateer/fusion@0.3.1"
+fusion = "elttob/fusion@0.3.0"
 trove = "cody-nelson/trove@0.0.1"
 
 # Dev

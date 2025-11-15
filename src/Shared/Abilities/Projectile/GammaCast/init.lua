@@ -27,7 +27,7 @@ function GammaCast.CastClient(
 	end
 
 	-- Client-side predictive simulation (doesn't need client timestamp itself)
-	local simulation = Simulation.new(authorEntityID, typeName, origin, direction, nil, modifiers, false) -- Pass nil for clientTimestamp
+	local simulation = Simulation.new(authorEntityID, typeName, origin, direction, nil, modifiers, true) -- Pass nil for clientTimestamp
 
 	-- Fire to server WITH the client's current time
 	local clientTimestamp = workspace:GetServerTimeNow() -- Capture client time
@@ -52,7 +52,7 @@ function GammaCast.CastServer(
 	end
 
 	-- Pass clientTimestamp to Simulation.new
-	local simulation = Simulation.new(authorEntityID, typeName, origin, direction, clientTimestamp, modifiers, false)
+	local simulation = Simulation.new(authorEntityID, typeName, origin, direction, clientTimestamp, modifiers, true)
 	local simulationResult = simulation:start() :: Simulation.SimulationResult?
 
 	return simulationResult

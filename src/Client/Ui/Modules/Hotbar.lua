@@ -1,98 +1,98 @@
 local Hotbar = {}
 
 -- Services
-local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Modules
+local Fusion = require(ReplicatedStorage.Packages.fusion)
+local Slot = require(ReplicatedStorage.UI.Components.Slot)
+local HotbarComponent = require(ReplicatedStorage.UI.Components.Hotbar)
 local Viewports = require(script.Parent.Parent.Viewports)
-local Trove = require(ReplicatedStorage.Packages.trove)
+
+local Children = Fusion.Children
+local peek = Fusion.peek
 
 Hotbar.CharacterDependant = true
 
 function Hotbar.InitUi(ui)
-    -- Ui Elements
-    local HotbarGui = ui.GetGui("Hotbar")
-    -- Main frames
-    local HotbarFrame = HotbarGui:WaitForChild("Main")
-    -- Templates
-    local Slot = ui.MakeTemplate(HotbarFrame.Slot)
-	-- Trove
-	local trove = Trove.new()
-	-- Variables
-    local lastFocusedIndex = nil
+	local MainGui = ui.GetGui("MainGui")
 
-    -- Functions
-    local function addSlot(tool: Tool,index)
-        local slot = Slot:Clone()
-        slot.Parent = HotbarFrame
-        slot.Name = "Slot"..index
-        slot.Inner.Number.Text = index
-        slot.LayoutOrder = index
+	local rootScope = Fusion.scoped(Fusion)
 
-        Viewports.GetItemViewport(tool,slot.Inner.Viewport)
-    end
+	local focusedIndex = rootScope:Value(nil)
+	local tools = rootScope:Value({})
 
-	local function getSlot(index)
-		assert(index, `Index must not be nil.`)
-		
-        return HotbarFrame:FindFirstChild("Slot"..index)
-    end
-
-	local function removeSlot(index)
-		assert(index, `Index must not be nil.`)
-		
-        local slot = getSlot(index)
-        if slot then
-            slot:Destroy()
-        end
-    end
-
-    local function unfocusSlot(_,index)
-		assert(index, `Index must not be nil.`)
-		
-        local slot = getSlot(index)
-        if slot then
-            local inner = slot.Inner  
-            local goal = {Position = UDim2.fromScale(0.5, 0.5)}
-            local tween = TweenService:Create(inner, TweenInfo.new(0.3), goal)
-            tween:Play()
-        end
-
-        lastFocusedIndex = nil
+	if ui.backpack and ui.backpack.tools then
+		local initialTools = {}
+		for _, tool in ipairs(ui.backpack.tools:GetChildren()) do
+			local index = tool:GetAttribute("Index")
+			if index then
+				initialTools[index] = tool
+			end
+		end
+		tools:set(initialTools)
 	end
 
-	local function focusSlot(_,index)
-		assert(index, `Index must not be nil.`)
-		
-        local slot = getSlot(index)
-        if slot then
-            local inner = slot.Inner
-            local goal = {Position = UDim2.new(0.5, 0, 0.5, -10)}
-            local tween = TweenService:Create(inner, TweenInfo.new(0.2), goal)
-            tween:Play() 
-        end
+	local toolArray = rootScope:Computed(function(use)
+		local asArray = {}
+		for _, t in pairs(use(tools)) do
+			table.insert(asArray, t)
+		end
+		table.sort(asArray, function(a, b)
+			return a:GetAttribute("Index") < b:GetAttribute("Index")
+		end)
+		return asArray
+	end)
 
-        -- Unfocus the previous slot
-        if lastFocusedIndex then
-            unfocusSlot(nil,lastFocusedIndex)
-        end
+	HotbarComponent(rootScope, {
+		Parent = MainGui,
+		Children = rootScope:ForValues(toolArray, function(use, scope, tool)
+			local index = tool:GetAttribute("Index")
+			return Slot(scope, {
+				LayoutOrder = index,
+				Number = tostring(index),
+				Tool = tool,
+				GetItemViewport = Viewports.GetItemViewport,
+				Focused = scope:Computed(function(use)
+					return use(focusedIndex) == index
+				end),
+			})
+		end),
+	})
 
-        lastFocusedIndex = index
-    end
-	
-    -- If the backpack already has tools, add them to the hotbar
-    if ui.backpack then
-        for _,tool in ui.backpack.tools:GetChildren() do
-            addSlot(tool,tool:GetAttribute("Index"))
-        end
-    end
-	
-	trove:Add(ui.events.ToolAdded:Connect(addSlot))
-	trove:Add(ui.events.ToolRemoved:Connect(removeSlot))
-	trove:Add(ui.events.ToolEquip:Connect(focusSlot))
-	trove:Add(ui.events.ToolUnequip:Connect(unfocusSlot))
-	
-	return trove
+	local function addSlot(tool: Tool, index: number)
+		local currentTools = peek(tools)
+		currentTools[index] = tool
+		tools:set(currentTools)
+	end
+
+	local function removeSlot(index: number)
+		local currentTools = peek(tools)
+		currentTools[index] = nil
+		tools:set(currentTools)
+	end
+
+	local function focusSlot(_, index: number)
+		focusedIndex:set(index)
+	end
+
+	local function unfocusSlot(_, index: number)
+		if peek(focusedIndex) == index then
+			focusedIndex:set(nil)
+		end
+	end
+
+	ui.events.ToolAdded:Connect(addSlot)
+	ui.events.ToolRemoved:Connect(removeSlot)
+	ui.events.ToolEquip:Connect(focusSlot)
+	ui.events.ToolUnequip:Connect(unfocusSlot)
+
+	local cleanup = {
+		Destroy = function()
+			rootScope:doCleanup()
+		end,
+	}
+
+	return cleanup
 end
 
 return Hotbar

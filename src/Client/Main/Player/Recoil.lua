@@ -1,39 +1,41 @@
--- Packes
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
--- Fusion
-local Fusion = require(ReplicatedStorage.Packages.fusion)
+-- Services
+local RunService = game:GetService("RunService")
 
 local RecoilController = {}
 RecoilController.__index = RecoilController
 
--- Constants for tuning
-local SPRING_SPEED = 20 -- How quickly the spring moves to its goal. Similar to frequency.
-local SPRING_DAMPING = 0.7 -- How much the spring resists oscillation.
-local RESET_DELAY = 0.15 -- Time after the last shot before recoil resets.
+--
+-- SETTINGS
+--
+-- How fast the camera returns to its original position after a shot.
+-- Higher numbers = a faster, "snappier" return.
+-- Lower numbers = a "softer", more delayed return.
+local RECOVER_SPEED = 15
 
 local singleton = nil
 
+--
+-- Constructor
+--
 function RecoilController.new()
 	local self = setmetatable({}, RecoilController)
 
-	-- A scope handles cleanup automatically. No need for trove or manual destroy.
-	local scope = Fusion.scoped()
+	-- This tracks the current offset of the camera from recoil.
+	self.currentRecoil = Vector2.new(0, 0)
+	self.camera = workspace.CurrentCamera
 
-	-- State object that holds the target recoil angle. This is our "source of truth".
-	-- We will animate towards this value.
-	self.goal = Fusion.Value(scope, Vector2.new(0, 0))
-
-	-- The Fusion Spring automatically animates to follow the `_goal` state.
-	-- This single object replaces your manual springs and the RenderStepped update loop.
-	self.spring = Fusion.Spring(scope, self.goal, SPRING_SPEED, SPRING_DAMPING)
-
-	self._resetTask = nil -- To keep track of the scheduled reset
-
-	self:setup()
+	-- The 'onRenderStep' function will be connected to this to run every frame.
+	-- This is disconnected automatically if the script is destroyed.
+	self.renderConnection = RunService.RenderStepped:Connect(function(dt)
+		self:onRenderStep(dt)
+	end)
 
 	return self
 end
 
+--
+-- Singleton Accessor
+--
 function RecoilController:get()
 	if not singleton then
 		singleton = RecoilController.new()
@@ -41,42 +43,54 @@ function RecoilController:get()
 	return singleton
 end
 
--- This function is called from your weapon script when a shot is fired
+--
+-- Public Methods
+--
+
+-- This function is called from a weapon script when a shot is fired.
+-- vertical: How many degrees to kick the camera "up".
+-- horizontal: How many degrees to kick the camera sideways.
 function RecoilController:applyRecoil(vertical: number, horizontal: number)
-	-- Cancel any previously scheduled reset, since we just fired again.
-	if self._resetTask then
-		task.cancel(self._resetTask)
-		self._resetTask = nil
+	-- Directly add the recoil impulse, as in the reference guide.
+	self.currentRecoil = self.currentRecoil + Vector2.new(vertical, horizontal)
+end
+
+--
+-- Internal Logic
+--
+
+-- This function runs every frame to apply the recoil effect.
+function RecoilController:onRenderStep(deltaTime: number)
+	if not self.camera then
+		return
 	end
 
-	-- Add the new recoil to the current goal.
-	-- We use Fusion.peek() to get the state's value without creating a dependency.
-	local currentGoal = Fusion.peek(self.goal)
-	self.goal:set(currentGoal + Vector2.new(vertical, horizontal))
+	-- Smoothly interpolate the recoil angle back towards zero.
+	-- We use deltaTime to make recovery speed consistent regardless of framerate.
+	-- Alpha is clamped to 1 to prevent overshooting on low framerates.
+	local alpha = math.min(RECOVER_SPEED * deltaTime, 1)
+	self.currentRecoil = self.currentRecoil:Lerp(Vector2.new(0, 0), alpha)
 
-	-- Schedule the recoil to reset after a delay.
-	self._resetTask = task.delay(RESET_DELAY, function()
-		self.goal:set(Vector2.new(0, 0)) -- Set the goal to zero, the spring will animate back.
-	end)
+	-- Create the rotation CFrame from the current recoil angles.
+	-- We apply -X for vertical recoil so a positive 'vertical' value kicks the camera UP.
+	local recoilRotation = CFrame.Angles(
+		math.rad(self.currentRecoil.X), -- Vertical
+		math.rad(self.currentRecoil.Y), -- Horizontal
+		0
+	)
+
+	-- Apply the rotation to the camera's current CFrame.
+	-- The multiplication order is important: Current * Adjustment
+	self.camera.CFrame = self.camera.CFrame * recoilRotation
 end
 
-function RecoilController:setup()
-	local scope = Fusion.scoped()
-	local camera = workspace.CurrentCamera
-
-	-- Use Fusion.Observer to react to changes in the recoil state
-	Fusion.Observer(scope, self.spring):onChange(function()
-		-- Get the current animated recoil value from the Spring state object
-		local recoilOffset = Fusion.peek(self.spring)
-
-		-- Apply it to the camera's CFrame. This runs every frame the recoil value changes.
-		-- This is the ONLY place the camera is directly modified.
-		camera.CFrame = camera.CFrame
-			* CFrame.Angles(
-				math.rad(recoilOffset.X), -- Vertical
-				math.rad(recoilOffset.Y), -- Horizontal
-				0
-			)
-	end)
+-- This allows the singleton to be cleaned up if needed.
+function RecoilController:destroy()
+	if self.renderConnection then
+		self.renderConnection:Disconnect()
+		self.renderConnection = nil
+	end
+	singleton = nil
 end
+
 return RecoilController

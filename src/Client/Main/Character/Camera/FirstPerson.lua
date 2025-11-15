@@ -7,50 +7,52 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 -- Modules
-local Lerp = require(ReplicatedStorage.Utility.Lerp) 
+local Lerp = require(ReplicatedStorage.Utility.Lerp)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 -- Variables
 local LocalPlayer = Players.LocalPlayer
 -- Settings
-local FIELD_OF_VIEW = 80
+local FIELD_OF_VIEW = 90
 local HEAD_OFFSET = Vector3.new(0, 0, 0)
 
 function FirstPerson.new(cameraController)
-    local self = setmetatable({}, FirstPerson)
+	local self = setmetatable({}, FirstPerson)
 
-    self.controller = cameraController
-    self.camera = self.controller.camera
-    self.angles = CFrame.Angles(0, 0, 0);
+	self.controller = cameraController
+	self.camera = self.controller.camera
+	self.angles = CFrame.Angles(0, 0, 0)
 
-    return self
+	return self
 end
 
 function FirstPerson:set()
-    self.camera.FieldOfView = FIELD_OF_VIEW
-    LocalPlayer.CameraMinZoomDistance = 0.5
-    LocalPlayer.CameraMaxZoomDistance = 0.5
+	self.camera.FieldOfView = FIELD_OF_VIEW
+	LocalPlayer.CameraMinZoomDistance = 0.5
+	LocalPlayer.CameraMaxZoomDistance = 0.5
 end
 
 function FirstPerson:step(deltaTime: number)
-    local entity = self.controller.anima.entity
-    if not entity or not EntityUtility.IsAlive(entity.rig) then return end
+	local entity = self.controller.anima.entity
+	if not entity or not EntityUtility.IsAlive(entity.rig) then
+		return
+	end
 
-    local rig = entity.rig  
-    local velocity = rig.PrimaryPart.AssemblyLinearVelocity
-    local velocityMagnitude = velocity.magnitude
-    
-    local FOV = FIELD_OF_VIEW+velocityMagnitude
+	local rig = entity.rig
+	local velocity = rig.PrimaryPart.AssemblyLinearVelocity
+	local velocityMagnitude = velocity.magnitude
 
-    -- Lerp fov
-    local alpha = deltaTime/5
-    self.camera.FieldOfView = Lerp(self.camera.FieldOfView, FOV, alpha)
+	local FOV = FIELD_OF_VIEW + velocityMagnitude
 
-    for _, d in rig:GetDescendants() do
-        if d:IsA("BasePart") then
-            d.CastShadow = false
-            d.LocalTransparencyModifier = 1
-        end
-    end
+	-- Lerp fov
+	local alpha = deltaTime / 5
+	self.camera.FieldOfView = Lerp(self.camera.FieldOfView, FOV, alpha)
+
+	for _, d in rig:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CastShadow = false
+			d.LocalTransparencyModifier = 1
+		end
+	end
 end
 
 return FirstPerson

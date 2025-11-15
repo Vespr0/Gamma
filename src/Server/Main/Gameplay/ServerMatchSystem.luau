@@ -5,6 +5,7 @@ local BridgeNet2 = require(ReplicatedStorage.Packages.BridgeNet2)
 local MapLoader = require(script.Parent.MapLoader).new()
 local ConfigUtility = require(ReplicatedStorage.Configs.ConfigUtility)
 local GameplayUtility = require(ReplicatedStorage.Utility.Gameplay.GameplayUtility)
+local MobSpawner = require(script.Parent.Parent.Mobs.MobSpawner)
 
 local ServerMatchSystem = {}
 
@@ -40,7 +41,7 @@ function ServerMatchSystem.enterLobby(configName: string)
 	local map = MapLoader:load(config.LobbyMap)
 	teleportPlayersToSpawns(Players:GetPlayers(), map)
 
-	local intermissionDuration = 10
+	local intermissionDuration = 5
 	matchStateBridge:Fire(BridgeNet2.AllPlayers(), {
 		phase = "Lobby",
 		event = {
@@ -65,6 +66,7 @@ function ServerMatchSystem.startMatch(configName: string)
 	-- Load the map
 	local map = MapLoader:load(config.Map)
 	teleportPlayersToSpawns(Players:GetPlayers(), map)
+	MobSpawner.Spawn("HockeyMaskGuy", map.Spawns:GetChildren()[1].CFrame + Vector3.new(10, 0, 0), "Red")
 
 	-- Assign roles and notify clients
 	local players = Players:GetPlayers()
