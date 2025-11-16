@@ -13,6 +13,7 @@ local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local ServerBackpack = require(script.Parent.ServerBackpack)
 local Ragdoll = require(ReplicatedStorage.Utility.Ragdoll)
 local BridgeNet2 = require(ReplicatedStorage.Packages.BridgeNet2)
+local ServerResources = require(script.Parent.ServerResources)
 
 -- Variables
 ServerEntity.Instances = {}
@@ -38,7 +39,6 @@ function ServerEntity.new(rig, player: Player | nil, team: string)
 	end
 
 	self.player = player
-	self.resources = {}
 
 	assert(Game.Teams[team], `Team "{team}" is not valid`)
 	self.team = team
@@ -46,44 +46,6 @@ function ServerEntity.new(rig, player: Player | nil, team: string)
 	self:setup()
 
 	return self
-end
-
--- New methods for resource management
-function ServerEntity:AddResource(
-	resourceName: string,
-	resourceType: string,
-	resourceAmount: number,
-	resourceMaxAmount: number
-)
-	self.resources[resourceName] = {
-		resourceType = resourceType,
-		resourceAmount = resourceAmount,
-		resourceMaxAmount = resourceMaxAmount,
-	}
-	if self.player then
-		UpdateEntityResourceBridge:Fire(self.player, {
-			entityId = self.id,
-			resourceName = resourceName,
-			resourceData = self.resources[resourceName],
-		})
-	end
-end
-
-function ServerEntity:GetResource(resourceName: string)
-	return self.resources[resourceName]
-end
-
-function ServerEntity:SetResourceAmount(resourceName: string, amount: number)
-	if self.resources[resourceName] then
-		self.resources[resourceName].resourceAmount = amount
-		if self.player then
-			UpdateEntityResourceBridge:Fire(self.player, {
-				entityId = self.id,
-				resourceName = resourceName,
-				resourceData = self.resources[resourceName],
-			})
-		end
-	end
 end
 
 function ServerEntity:setup()
@@ -94,6 +56,7 @@ function ServerEntity:setup()
 
 	self:setupHumanoid()
 	-- self:setupPhysicsController()
+	self:setupResources()
 	self:setupBackpack()
 
 	-- Setup ragdoll system
@@ -114,6 +77,10 @@ end
 
 function ServerEntity.Get(id: number | string)
 	return ServerEntity.Instances[tostring(id)]
+end
+
+function ServerEntity:setupResources()
+	self.resources = ServerResources.new(self)
 end
 
 function ServerEntity:setupHumanoid()

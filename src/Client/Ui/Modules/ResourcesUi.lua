@@ -18,34 +18,27 @@ function ResourcesModule.InitUi(ui)
 	local rootScope = Fusion.scoped(Fusion)
 
 	-- Create a Fusion Value to hold the current ClientEntity instance
-	local currentClientEntity = rootScope:Value(ui.entity)
-
-	-- Listen for EntityAdded events to update the currentClientEntity Fusion Value
-	ui.events.EntityAdded:Connect(function(newEntity)
-		currentClientEntity:set(newEntity)
-	end)
-
-	-- Create a Computed value for resources that reacts to currentClientEntity changes
+	local trove = Trove.new()
 	local resourcesState = rootScope:Value({})
 
-	-- Observe the currentClientEntity to manage dynamic signal connections
-	local connectionTrove = Trove.new()
-	rootScope:Observer(currentClientEntity):onBind(function(entity)
-		connectionTrove:Clean()
+	-- Listen for EntityAdded events to update the currentClientEntity Fusion Value
+	local function updateEntity(entity)
+		local entityResourcesComponent = entity.resources
 
-		if not entity then
-			return
-		end
+		entityResourcesComponent.trove:Add(entityResourcesComponent.resourcesDataChanged:Connect(function()
+			resourcesState:set(entityResourcesComponent.resourcesData)
+			warn(entityResourcesComponent.resourcesData)
+		end))
 
-		if entity.resources and entity.resourcesChanged then
-			connectionTrove:Add(entity.resourcesChanged:Connect(function(newResources)
-				resourcesState:set(newResources)
-			end))
-			-- Also set the initial state from the new entity's resources (or empty if no entity)
-			resourcesState:set(entity.resources or {})
-		end
+		-- Also set the initial state from the new entity's resources (or empty if no entity)
+		resourcesState:set(entityResourcesComponent.resourcesData or {})
+	end
+	if ui.entity then
+		updateEntity(ui.entity)
+	end
+	ui.events.EntityAdded:Connect(function(entity)
+		updateEntity(entity)
 	end)
-
 	-- Create ResourcesHolder component
 	ResourcesHolder(rootScope, {
 		Parent = MainGui,

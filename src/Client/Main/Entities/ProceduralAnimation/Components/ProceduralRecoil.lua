@@ -91,7 +91,7 @@ function Component:update(deltaTime)
 	end
 
 	-- Calculate and return arm recoil offsets.
-	local armRecoilValue = Fusion.peek(self.armSpring) -- This is now a number
+	local armRecoilValue = Fusion.peek(self.armSpring) * 2 -- This is now a number
 
 	-- If recoil is negligible, do nothing for arms.
 	if math.abs(armRecoilValue) < 0.01 then

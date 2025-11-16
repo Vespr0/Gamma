@@ -39,9 +39,9 @@ local function ResourcesHolder(
 			scope:ForValues(props.Resources, function(use, scope, resourceData, index)
 				return Resource(scope, {
 					Size = UDim2.new(1, 0, 0, 40),
-					Name = resourceData.Name,
-					Amount = resourceData.Amount,
-					MaxAmount = resourceData.MaxAmount,
+					Name = resourceData.displayName,
+					Amount = resourceData.amount,
+					MaxAmount = resourceData.maxAmount,
 					LayoutOrder = index,
 				})
 			end),

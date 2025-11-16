@@ -8,6 +8,10 @@ local RunService = game:GetService("RunService")
 local Loading = require(ReplicatedStorage.Utility.Loading)
 local Test = require(script.Test)
 
+-- Initialize bridnet2 here to avoid race conditions
+-- TODO: Find a better solution
+require(ReplicatedStorage.Packages.BridgeNet2)
+
 local function loadModules()
 	Loading.LoadAssetsDealer()
 	Loading.LoadModules(script.Parent, { script, script.Test })

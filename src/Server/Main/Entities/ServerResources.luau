@@ -1,45 +1,33 @@
-local ServerResources = {}
-ServerResources.__index = ServerResources
-
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 -- Modules
-local Trove = require(ReplicatedStorage.Packages.trove)
+local BaseResources = require(ReplicatedStorage.Classes.Bases.BaseResources)
 local BridgeNet2 = require(ReplicatedStorage.Packages.BridgeNet2)
-local UpdateEntityResourceBridge = BridgeNet2.ClientBridge("UpdateEntityResource")
+
+-- Variables
+local UpdateEntityResourceBridge = BridgeNet2.ServerBridge("UpdateEntityResource")
+
+local ServerResources = setmetatable({}, BaseResources)
+ServerResources.__index = ServerResources
 
 function ServerResources.new(entity)
-	local self = setmetatable({}, ServerResources)
-
-	-- Components
-	self.entity = entity
-	self.trove = Trove.new()
+	local self = setmetatable(BaseResources.new(entity), ServerResources)
 
 	self:setup()
 
 	return self
 end
 
-function ServerResources:addResource() end
-
 function ServerResources:setup()
-	self.trove:Connect(UpdateEntityResourceBridge, function(data)
-		local entityId = data.entityId
-		local resourceName = data.resourceName
-		local resourceData = data.resourceData
-
-		if self.entity.entityId ~= entityId then
-			return
-		end
-
-		self.entity.resources[resourceName] = resourceData
-		-- Fire the signal to notify listeners that resources have changed
-		self.entity.resourcesChanged:Fire(self.entity.resources)
+	self.trove:Connect(self.resourcesDataChanged, function(resourceName, resourceData)
+		warn(self.entity.id)
+		UpdateEntityResourceBridge:Fire(BridgeNet2.AllPlayers(), {
+			entityId = self.entity.id,
+			resourceName = resourceName,
+			resourceData = resourceData,
+		})
 	end)
-end
-
-function ServerResources:destroy()
-	self.trove:Destroy()
 end
 
 return ServerResources

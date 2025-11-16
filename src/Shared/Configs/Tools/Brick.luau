@@ -11,6 +11,8 @@ return {
 			inputs = {
 				activate = { Enum.UserInputType.MouseButton1, Enum.KeyCode.ButtonR2 },
 			},
+			maxAmmo = 4,
+			resourceDisplayName = "Bricks",
 			sound = "Tools/Generic/Throw",
 			continuousFire = false,
 			projectileType = "Brick",
