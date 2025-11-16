@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 -- Modules
 local ClientAnima = require(script.Parent.Parent.Main.Player.ClientAnima)
+local ClientEntity = require(script.Parent.Parent.Main.Entities.ClientEntity)
 local ClientBackpack = require(script.Parent.Parent.Main.Entities.ClientBackpack)
 local Fusion = require(ReplicatedStorage.Packages.fusion)
 local Signal = require(ReplicatedStorage.Packages.signal)
@@ -142,6 +143,7 @@ function Ui.GetUtility(scope: any, characterDependant: boolean)
 		ToolRemoved = Signal.new(),
 		ToolEquip = Signal.new(),
 		ToolUnequip = Signal.new(),
+		EntityAdded = Signal.new(),
 	}
 
 	-- Update the character backpack
@@ -181,6 +183,30 @@ function Ui.GetUtility(scope: any, characterDependant: boolean)
 		end
 
 		updateBackpack(backpack)
+	end)
+
+	-- Update the character entity
+	local entityTrove
+	local function updateEntity(entity)
+		if entityTrove then
+			entityTrove:Destroy()
+		end
+		entityTrove = Trove.new()
+
+		utility.entity = entity
+		utility.events.EntityAdded:Fire(entity)
+	end
+
+	if ClientEntity.LocalPlayerInstance then
+		updateEntity(ClientEntity.LocalPlayerInstance)
+	end
+
+	ClientEntity.GlobalAdded:Connect(function(entity)
+		if not entity.isLocalPlayerInstance then
+			return
+		end
+
+		updateEntity(entity)
 	end)
 
 	return utility

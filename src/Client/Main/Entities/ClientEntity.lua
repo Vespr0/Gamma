@@ -21,6 +21,7 @@ local ClientLookAt = require(script.Parent.ClientLookAt)
 local ProceduralAnimationController = require(script.Parent.ProceduralAnimation.ProceduralAnimationController)
 local ProceduralCrouching = require(script.Parent.ProceduralAnimation.Components.ProceduralCrouching)
 local ProceduralRecoil = require(script.Parent.ProceduralAnimation.Components.ProceduralRecoil)
+local ClientResources = require(script.Parent.ClientResources)
 
 -- Variables
 local LocalPlayer = Players.LocalPlayer
@@ -40,6 +41,8 @@ function ClientEntity.new(rig: TypeRig.Rig)
 
 	local id = rig:GetAttribute("ID") :: number
 	local self = setmetatable(BaseEntity.new(rig, id), ClientEntity)
+	self.resources = {} -- Changed to a regular table
+	self.resourcesChanged = Signal.new()
 
 	-- Store the instance linked to the current player character
 	self.isLocalPlayerInstance = LocalPlayer.Character == rig :: boolean
@@ -72,6 +75,10 @@ function ClientEntity:setupProceduralAnimations()
 	self.proceduralAnimationController:loadComponent(ProceduralRecoil)
 end
 
+function ClientEntity:setupResources()
+	self.resources = ClientResources.new(self)
+end
+
 function ClientEntity:setup()
 	-- Initialize components in correct order, changing the order will result in errors
 	self:setupAnimations()
@@ -80,6 +87,7 @@ function ClientEntity:setup()
 	self:setupViewmodel()
 	self:setupProceduralAnimations()
 	self:setupBackpack()
+	self:setupResources()
 
 	self.events.Died:Connect(function()
 		self:destroy()

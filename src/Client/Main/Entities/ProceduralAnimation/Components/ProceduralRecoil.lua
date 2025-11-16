@@ -19,7 +19,8 @@ function Component.new(controller, params)
 
 	self.Name = Component.Name
 	self.controller = controller
-	self.scope = Fusion.scoped()
+	self.scope = Fusion:scoped()
+	self.random = Random.new(os.time())
 
 	-- State for camera recoil
 	self.cameraGoal = self.scope:Value(Vector2.new(0, 0))
@@ -34,14 +35,17 @@ function Component.new(controller, params)
 	self.camera = workspace.CurrentCamera
 
 	-- Observer to update the camera CFrame automatically when the spring changes.
-	Fusion.Observer(self.scope, self.cameraSpring):onChange(function()
+	self.scope:Observer(self.cameraSpring):onChange(function()
 		local recoilOffset = Fusion.peek(self.cameraSpring)
 		self.currentCameraRecoilCFrame = CFrame.Angles(
-			math.rad(-recoilOffset.X), -- Vertical (negative for upward kick)
+			math.rad(recoilOffset.X), -- Vertical (negative for upward kick)
 			math.rad(recoilOffset.Y), -- Horizontal
 			0
 		)
 	end)
+
+	-- Added a variable to track the last applied recoil CFrame.
+	self.lastCameraRecoilCFrame = CFrame.new()
 
 	return self
 end
@@ -56,7 +60,8 @@ function Component:applyRecoil(vertical: number, horizontal: number)
 
 	-- Update camera recoil goal
 	local currentCameraGoal = Fusion.peek(self.cameraGoal)
-	self.cameraGoal:set(currentCameraGoal + Vector2.new(vertical, horizontal))
+	local randomHorizontal = self.random:NextInteger(-horizontal * 100, horizontal * 100) / 100
+	self.cameraGoal:set(currentCameraGoal + Vector2.new(vertical, randomHorizontal))
 
 	-- Update arm recoil goal based on camera recoil (single intensity for Z-axis rotation)
 	local currentArmGoal = Fusion.peek(self.armGoal)
@@ -72,10 +77,17 @@ end
 
 -- Called by the ProceduralAnimationController to get arm animation offsets and apply camera recoil.
 function Component:update(deltaTime)
-	-- Apply camera recoil directly.
-	-- self.currentCameraRecoilCFrame is updated by the Fusion observer.
+	-- Apply camera recoil by undoing the last frame's recoil and applying the current one.
 	if self.camera then
+		-- 1. Undo the recoil CFrame from the LAST frame
+		self.camera.CFrame = self.camera.CFrame * self.lastCameraRecoilCFrame:Inverse()
+
+		-- 2. Apply the recoil CFrame for the CURRENT frame
+		-- (self.currentCameraRecoilCFrame is already updated by the observer)
 		self.camera.CFrame = self.camera.CFrame * self.currentCameraRecoilCFrame
+
+		-- 3. Store this frame's recoil so we can undo it next frame
+		self.lastCameraRecoilCFrame = self.currentCameraRecoilCFrame
 	end
 
 	-- Calculate and return arm recoil offsets.
@@ -98,6 +110,11 @@ end
 
 -- Cleanup method for when the component is destroyed.
 function Component:Destroy()
+	-- Undo the last applied recoil CFrame to reset the camera
+	if self.camera and self.lastCameraRecoilCFrame then
+		self.camera.CFrame = self.camera.CFrame * self.lastCameraRecoilCFrame:Inverse()
+	end
+
 	if self.scope then
 		self.scope:doCleanup()
 	end

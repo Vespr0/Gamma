@@ -12,11 +12,14 @@ local Game = require(ReplicatedStorage.Utility.Game)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local ServerBackpack = require(script.Parent.ServerBackpack)
 local Ragdoll = require(ReplicatedStorage.Utility.Ragdoll)
+local BridgeNet2 = require(ReplicatedStorage.Packages.BridgeNet2)
 
 -- Variables
 ServerEntity.Instances = {}
 ServerEntity.GlobalAdded = Signal.new()
 ServerEntity.Counter = 0
+
+local UpdateEntityResourceBridge = BridgeNet2.ServerBridge("UpdateEntityResource")
 
 function ServerEntity.new(rig, player: Player | nil, team: string)
 	team = team or "Neutral"
@@ -35,6 +38,7 @@ function ServerEntity.new(rig, player: Player | nil, team: string)
 	end
 
 	self.player = player
+	self.resources = {}
 
 	assert(Game.Teams[team], `Team "{team}" is not valid`)
 	self.team = team
@@ -42,6 +46,44 @@ function ServerEntity.new(rig, player: Player | nil, team: string)
 	self:setup()
 
 	return self
+end
+
+-- New methods for resource management
+function ServerEntity:AddResource(
+	resourceName: string,
+	resourceType: string,
+	resourceAmount: number,
+	resourceMaxAmount: number
+)
+	self.resources[resourceName] = {
+		resourceType = resourceType,
+		resourceAmount = resourceAmount,
+		resourceMaxAmount = resourceMaxAmount,
+	}
+	if self.player then
+		UpdateEntityResourceBridge:Fire(self.player, {
+			entityId = self.id,
+			resourceName = resourceName,
+			resourceData = self.resources[resourceName],
+		})
+	end
+end
+
+function ServerEntity:GetResource(resourceName: string)
+	return self.resources[resourceName]
+end
+
+function ServerEntity:SetResourceAmount(resourceName: string, amount: number)
+	if self.resources[resourceName] then
+		self.resources[resourceName].resourceAmount = amount
+		if self.player then
+			UpdateEntityResourceBridge:Fire(self.player, {
+				entityId = self.id,
+				resourceName = resourceName,
+				resourceData = self.resources[resourceName],
+			})
+		end
+	end
 end
 
 function ServerEntity:setup()
@@ -74,45 +116,11 @@ function ServerEntity.Get(id: number | string)
 	return ServerEntity.Instances[tostring(id)]
 end
 
--- function ServerEntity:setupPhysicsController()
--- 	self.humanoid.EvaluateStateMachine = false -- Disable Humanoid state machine and physics
-
--- 	local cm = Instance.new("ControllerManager")
--- 	local gc = Instance.new("GroundController", cm)
--- 	Instance.new("AirController", cm)
--- 	Instance.new("ClimbController", cm)
--- 	Instance.new("SwimController", cm)
-
--- 	cm.RootPart = self.root
--- 	gc.GroundOffset = self.humanoid.HipHeight
--- 	cm.FacingDirection = cm.RootPart.CFrame.LookVector
-
--- 	local floorSensor = Instance.new("ControllerPartSensor")
--- 	floorSensor.SensorMode = Enum.SensorMode.Floor
--- 	floorSensor.SearchDistance = self.humanoid.HipHeight + 2.0 -- Increased buffer for ground detection
--- 	floorSensor.Name = "GroundSensor"
-
--- 	local ladderSensor = Instance.new("ControllerPartSensor")
--- 	ladderSensor.SensorMode = Enum.SensorMode.Ladder
--- 	ladderSensor.SearchDistance = 1.5
--- 	ladderSensor.Name = "ClimbSensor"
-
--- 	local waterSensor = Instance.new("BuoyancySensor")
-
--- 	cm.GroundSensor = floorSensor
--- 	cm.ClimbSensor = ladderSensor
-
--- 	waterSensor.Parent = cm.RootPart
--- 	floorSensor.Parent = cm.RootPart
--- 	ladderSensor.Parent = cm.RootPart
-
--- 	cm.Parent = self.rig
--- end
-
 function ServerEntity:setupHumanoid()
 	self.humanoid.BreakJointsOnDeath = false
 	-- Humanoid should use jump height
 	self.humanoid.UseJumpPower = false
+	self.humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
 end
 
 function ServerEntity:setupBackpack()

@@ -42,6 +42,8 @@ local function load()
 	Loading.LoadAssetsDealer()
     -- Load Modules
     Loading.LoadModules(script.Parent,{script})
+    -- Init ClientResourceHandler
+    require(script.Parent.Networking.ClientResourceHandler).Init() -- Added
     -- Load Ui
     require(script.Parent.Parent.Ui.Ui).Init()
     setProgress(1)

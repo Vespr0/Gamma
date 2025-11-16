@@ -21,6 +21,20 @@ function ServerAbilityProjectile.new(entity, tool, config)
 		ServerAbilityProjectile
 	)
 
+	-- Initialize ammo resource
+	if self.abilityConfig.maxAmmo then
+		local resourceName = self.tool.Name .. "Ammo"
+		local existingResource = self.entity:GetResource(resourceName)
+		if not existingResource then
+			self.entity:AddResource(
+				resourceName,
+				"Ammo",
+				self.abilityConfig.maxAmmo,
+				self.abilityConfig.maxAmmo
+			)
+		end
+	end
+
 	self:setup()
 
 	return self
@@ -36,6 +50,17 @@ function ServerAbilityProjectile:verifyOrigin(origin: Vector3): boolean
 end
 
 function ServerAbilityProjectile:fire(direction: Vector3, origin: Vector3, clientTimestamp: number)
+	-- Check for ammo
+	if self.abilityConfig.maxAmmo then
+		local resourceName = self.tool.Name .. "Ammo"
+		local resource = self.entity:GetResource(resourceName)
+		if resource and resource.resourceAmount <= 0 then
+			return -- No ammo
+		end
+		-- Consume ammo
+		self.entity:SetResourceAmount(resourceName, resource.resourceAmount - 1)
+	end
+
 	-- Check cooldown
 	if self:isHot() then
 		return

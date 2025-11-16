@@ -177,7 +177,7 @@ function Animator:handleRunning(speed)
 		if walk or run then
 			self.wasMoving = true
 			self.loaded.Base.Walk:AdjustSpeed(speed / 10)
-			self.loaded.Base.Run:AdjustSpeed(speed / 14)
+			self.loaded.Base.Run:AdjustSpeed(speed / 16)
 		else
 			self.wasMoving = false
 			self:stop("Base", "Walk", FADING_OUT_FACTOR)

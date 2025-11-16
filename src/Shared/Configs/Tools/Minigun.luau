@@ -1,30 +1,31 @@
 return {
-	displayName = "Pistol",
+	displayName = "Minigun",
 	description = "She weighs one hundred fifty kilograms and fires two hundred dollar, custom-tooled cartridges at ten thousand rounds per minute. It costs four hundred thousand dollars to fire this weapon...for twelve seconds.",
 
 	abilities = {
 		shoot = {
 			name = "Projectile",
-			cooldownDuration = 0.4,
-			spread = 2,
-			damage = 10,
+			cooldownDuration = 0.1,
+			spread = 1,
+			damage = 5,
 			inputs = {
 				activate = { Enum.UserInputType.MouseButton1, Enum.KeyCode.ButtonR2 },
 			},
 			recoil = {
-				vertical = 1,
+				vertical = 0.5,
 				horizontal = 0.1,
 			},
-			maxAmmo = 6,
-			sound = "Tools/Generic/GunShot",
-			continuousFire = false,
+			sound = "Tools/Minigun/FireLoop",
+			continuousFire = true,
 			projectileConfig = {
-				hitscan = false,
+				hitscan = true,
 			},
 		},
 	},
 
+	walkSpeedBoost = -5,
+
 	animations = {
-		hold = "Tools/Generic/Pistol/Hold",
+		hold = "Tools/Minigun/Hold",
 	},
 }
