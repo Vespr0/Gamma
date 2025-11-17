@@ -21,7 +21,6 @@ end
 
 function ServerResources:setup()
 	self.trove:Connect(self.resourcesDataChanged, function(resourceName, resourceData)
-		warn(self.entity.id)
 		UpdateEntityResourceBridge:Fire(BridgeNet2.AllPlayers(), {
 			entityId = self.entity.id,
 			resourceName = resourceName,

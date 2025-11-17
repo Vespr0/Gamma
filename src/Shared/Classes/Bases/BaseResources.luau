@@ -54,9 +54,8 @@ function BaseResources:restoreResource(resourceName)
 end
 
 function BaseResources:onResourceChanged(resourceName, resourceData)
-	if self.resourcesDataChanged then
-		self.resourcesDataChanged:Fire(resourceName, resourceData)
-	end
+	-- TODO: Add error checking
+	self.resourcesDataChanged:Fire(resourceName, resourceData)
 end
 
 function BaseResources:destroy() end
