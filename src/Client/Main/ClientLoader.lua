@@ -18,7 +18,7 @@ local function setContext(value)
 end
 
 local function setProgress(value: number)
-	print("⌛ " .. context, (value * 100) .. "%")
+	print("⌛ " .. context, (math.round(value * 100)) .. "%")
 	progress = value
 end
 

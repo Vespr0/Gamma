@@ -25,13 +25,11 @@ function ResourcesModule.InitUi(ui)
 	local function updateEntity(entity)
 		local entityResourcesComponent = entity.resources
 
-		resourcesState:set(entityResourcesComponent.resourcesData)
+		resourcesState:set(entityResourcesComponent.resourcesData or {})
 		entityResourcesComponent.trove:Connect(entityResourcesComponent.resourcesDataChanged, function()
+			warn(entityResourcesComponent.resourcesData)
 			resourcesState:set(entityResourcesComponent.resourcesData)
 		end)
-
-		-- Also set the initial state from the new entity's resources (or empty if no entity)
-		resourcesState:set(entityResourcesComponent.resourcesData or {})
 	end
 	if ui.entity then
 		updateEntity(ui.entity)

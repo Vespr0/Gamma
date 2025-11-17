@@ -7,6 +7,7 @@ local Trove = require(ReplicatedStorage.Packages.trove)
 local BridgeNet2 = require(ReplicatedStorage.Packages.BridgeNet2)
 
 -- Variables
+local GetAllEntityResourcesBridge = BridgeNet2.ClientBridge("GetAllEntityResources")
 local UpdateEntityResourceBridge = BridgeNet2.ClientBridge("UpdateEntityResource")
 
 local ClientResources = setmetatable({}, BaseResources)
@@ -21,19 +22,24 @@ function ClientResources.new(entity)
 end
 
 function ClientResources:setup()
-	self.trove:Connect(UpdateEntityResourceBridge, function(data)
-		warn(data)
+	GetAllEntityResourcesBridge:Fire(self.entity.id)
 
-		local entityId = data.entityId
-		local resourceName = data.resourceName
-		local resourceData = data.resourceData
-
-		if self.entity.id ~= entityId then
+	self.trove:Connect(GetAllEntityResourcesBridge, function(payload)
+		if self.entity.id ~= payload.entityId then
 			return
 		end
 
-		self:setResource(resourceName, resourceData)
-		warn(resourceName, resourceData)
+		for resourceName, resourceData in payload.data do
+			self:setResource(resourceName, resourceData)
+		end
+	end)
+
+	self.trove:Connect(UpdateEntityResourceBridge, function(update)
+		if self.entity.id ~= update.entityId then
+			return
+		end
+
+		self:setResource(update.resourceName, update.resourceData)
 	end)
 end
 

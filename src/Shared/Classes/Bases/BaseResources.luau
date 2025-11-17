@@ -26,7 +26,8 @@ end
 
 function BaseResources:setResource(resourceName, resourceData: ResourceData)
 	self.resourcesData[resourceName] = resourceData
-	self:onResourceChanged(resourceName, self.resourcesData[resourceName])
+	self:onResourceChanged(resourceName, resourceData)
+	warn(self.resourcesData[resourceName])
 end
 
 function BaseResources:incrementResource(resourceName: string, amount: number)
@@ -54,7 +55,10 @@ function BaseResources:restoreResource(resourceName)
 end
 
 function BaseResources:onResourceChanged(resourceName, resourceData)
-	-- TODO: Add error checking
+	if not resourceName then
+		warn("Attempted to fire resourcesDataChanged with a nil resourceName")
+		return
+	end
 	self.resourcesDataChanged:Fire(resourceName, resourceData)
 end
 
