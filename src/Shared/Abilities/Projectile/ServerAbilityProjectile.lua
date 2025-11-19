@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 local BaseServerAbility = require(ServerScriptService.Main.Abilities.BaseServerAbility)
-local BaseAbilityProjectile = require(ReplicatedStorage.Abilities.Projectile.BaseAbilityProjectile)
+local AmmoComponent = require(ReplicatedStorage.Abilities.Projectile.AmmoComponent)
 local Remotes = ReplicatedStorage.Remotes
 -- Types
 local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
@@ -15,11 +15,6 @@ local DamageManager = require(ServerScriptService.Main.Abilities.DamageManager)
 local ServerAbilityProjectile = setmetatable({}, BaseServerAbility)
 ServerAbilityProjectile.__index = ServerAbilityProjectile
 
-for k, v in pairs(BaseAbilityProjectile) do
-	if ServerAbilityProjectile[k] == nil then
-		ServerAbilityProjectile[k] = v
-	end
-end
 -- Constants
 local ABILITY_NAME = "Projectile"
 
@@ -29,6 +24,7 @@ function ServerAbilityProjectile.new(entity, tool, config)
 		ServerAbilityProjectile
 	)
 	self.isServer = true
+	self.ammoComponent = AmmoComponent.new(self, entity)
 	self:setup()
 
 	return self
@@ -44,7 +40,7 @@ function ServerAbilityProjectile:verifyOrigin(origin: Vector3): boolean
 end
 
 function ServerAbilityProjectile:fire(direction: Vector3, origin: Vector3, clientTimestamp: number)
-	if self:isOutOfAmmo() then
+	if self.ammoComponent:isOutOfAmmo() then
 		return
 	end
 
@@ -53,7 +49,7 @@ function ServerAbilityProjectile:fire(direction: Vector3, origin: Vector3, clien
 		return
 	end
 	self:heat()
-	self:decrementAmmo()
+	self.ammoComponent:decrementAmmo()
 
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local GammaCast = require(ReplicatedStorage.Abilities.Projectile.GammaCast)
@@ -115,7 +111,7 @@ function ServerAbilityProjectile:setup()
 		self:processAction(actionName, ...)
 	end)
 
-	self:setupResource()
+	self.ammoComponent:setupResource()
 end
 
 function ServerAbilityProjectile:destroy()

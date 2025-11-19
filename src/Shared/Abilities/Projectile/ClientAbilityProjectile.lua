@@ -8,7 +8,7 @@ local ABILITY_NAME = "Projectile"
 -- Dependencies
 local Player = Players.LocalPlayer
 local BaseClientAbility = require(Player.PlayerScripts.Main.Abilities.BaseClientAbility)
-local BaseAbilityProjectile = require(ReplicatedStorage.Abilities.Projectile.BaseAbilityProjectile)
+local AmmoComponent = require(ReplicatedStorage.Abilities.Projectile.AmmoComponent)
 local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
 local Inputs = require(Player.PlayerScripts.Main.Input.Inputs):get()
 -- local ProjectileManager = require(script.Parent.Parent.ProjectileManager)
@@ -19,56 +19,39 @@ local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
 local ClientAbilityProjectile = setmetatable({}, BaseClientAbility)
 ClientAbilityProjectile.__index = ClientAbilityProjectile
 
-for k, v in pairs(BaseAbilityProjectile) do
-	if ClientAbilityProjectile[k] == nil then
-		ClientAbilityProjectile[k] = v
-	end
-end
-
 function ClientAbilityProjectile.new(entity, tool, config)
 	local self = setmetatable(
 		BaseClientAbility.new(ABILITY_NAME, entity, tool, config) :: TypeAbility.BaseClientAbility,
 		ClientAbilityProjectile
 	)
 	self.isServer = false
+	self.ammoComponent = AmmoComponent.new(self, entity)
 	self:setup()
 
 	self.proceduralRecoil = self.entity.proceduralAnimationController:getComponent("ProceduralRecoil")
 
 	self.lastFireTime = os.clock()
-	print(self.entity)
+	self.lastEmptyClickTime = 0
 
 	return self
 end
 
 function ClientAbilityProjectile:playFireSound()
-	-- Handle continuous and one-shot fire sounds
 	if self.abilityConfig.continuousFire then
-		-- Looping weapon
-		if self.fireSound and self.fireSound.Playing then
-			return
-		end
+		-- Looping weapon: ensure sound is playing
 		if self.fireSound then
-			SoundManager.StopSound(self.fireSound)
+			self.fireSound:Play(0.4, true, 0.1)
 		end
-		SoundManager.Play(self.fireSound, 0.4, true, 0.1)
-		self.fireSound.RollOffMaxDistance = 100
-		self.fireSound.RollOffMinDistance = 20
 		return
 	end
 
-	-- One-shot weapon: play fresh sound in PlayerGui
-	if self.fireSound then
-		SoundManager.StopSound(self.fireSound)
-		self.fireSound = nil
-	end
-	-- -- Create and play one-shot sound under PlayerGui
-	-- local parent = Player:WaitForChild("PlayerGui")
-	-- local newSound = SoundManager.New(self.abilityConfig.sound, parent, "Effects")
-	-- SoundManager.Play(newSound, 0.4)
-	-- newSound.RollOffMaxDistance = 100
-	-- newSound.RollOffMinDistance = 20
-	return
+	-- One-shot weapon: play a new sound every time
+	SoundManager.playSound({
+		directory = self.abilityConfig.sound,
+		parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
+		category = "Effects",
+		volume = 0.4,
+	})
 end
 
 function ClientAbilityProjectile:processHit(result)
@@ -171,7 +154,6 @@ end
 
 function ClientAbilityProjectile:setupInputs()
 	self.isFiring = false
-	self.fireSound = nil
 
 	-- Input began handler
 	self.trove:Add(Inputs.events.ProcessedInputBegan:Connect(function(input)
@@ -207,8 +189,16 @@ function ClientAbilityProjectile:trigger(sendToServer: boolean, direction: Vecto
 		return
 	end
 
-	if self:isOutOfAmmo() then
-		SoundManager.Play(self.emptySound, 0.1, false, 0)
+	if self.ammoComponent:isOutOfAmmo() then
+		if os.clock() - self.lastEmptyClickTime > 0.3 then
+			SoundManager.playSound({
+				directory = "Tools/Generic/EmptyGun",
+				parent = self:getCurrentFakeToolHandle(),
+				category = "Effects",
+				volume = 0.1,
+			})
+			self.lastEmptyClickTime = os.clock()
+		end
 		return
 	end
 
@@ -222,10 +212,11 @@ end
 
 function ClientAbilityProjectile:onRenderStepped(dt)
 	-- Sound stop handler
-	if self.fireSound and self.abilityConfig.continuousFire and self.fireSound.Playing then
+	if self.fireSound and self.abilityConfig.continuousFire and not self.isFiring then
 		if os.clock() - self.lastFireTime > self.abilityConfig.cooldownDuration + 0.2 then
 			-- Stop sound if it's not firing
-			SoundManager.FadeOut(self.fireSound, 0.2)
+			self.fireSound:FadeOut(0.2)
+			self.fireSound = nil
 		end
 	end
 
@@ -238,12 +229,17 @@ end
 function ClientAbilityProjectile:onToolEquip(tool, index)
 	self.isFiring = false
 
-	-- Sounds
-	task.spawn(function()
-		self:waitForFakeTool()
-		self.emptySound = SoundManager.New("Tools/Generic/EmptyGun", self:getCurrentFakeToolHandle(), "Effects")
-		self.fireSound = SoundManager.New(self.abilityConfig.sound, self:getCurrentFakeToolHandle(), "Effects")
-	end)
+	-- Create looping fire sound if needed
+	if self.abilityConfig.continuousFire then
+		task.spawn(function()
+			self:waitForFakeTool()
+			self.fireSound = SoundManager.createSound({
+				directory = self.abilityConfig.sound,
+				parent = self:getCurrentFakeToolHandle(),
+				category = "Effects",
+			})
+		end)
+	end
 end
 
 -- function ClientAbilityProjectile:onToolUnequip(tool, index)
@@ -251,7 +247,7 @@ end
 -- end
 
 function ClientAbilityProjectile:setup()
-	self:setupResource()
+	self.ammoComponent:setupResource()
 
 	-- Setup inputs for the local player
 	if self.entity.isLocalPlayerInstance then
@@ -270,6 +266,7 @@ end
 function ClientAbilityProjectile:destroy()
 	if self.fireSound then
 		self.fireSound:Destroy()
+		self.fireSound = nil
 	end
 	self:destroySub()
 end

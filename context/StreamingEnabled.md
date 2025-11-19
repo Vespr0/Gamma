@@ -1,8 +1,6 @@
 Source: https://create.roblox.com/docs/workspace/streaming
 
-The game has `workspace.StreamingEnabled` set to `true`
-
-n-experience instance streaming allows the Roblox Engine to dynamically load and unload 3D content and related instances in regions of the world. This can improve the overall player experience in several ways, for example:
+In-experience instance streaming allows the Roblox Engine to dynamically load and unload 3D content and related instances in regions of the world. This can improve the overall player experience in several ways, for example:
 
 Faster join times — Players can start playing in one part of the world while more of the world loads in the background.
 Memory efficiency — Experiences can be played on devices with less memory since content is dynamically streamed in and out. More immersive and detailed worlds can be played on a wider range of devices.

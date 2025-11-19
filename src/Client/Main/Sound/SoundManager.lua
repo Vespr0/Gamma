@@ -1,5 +1,4 @@
 --!strict
-local SoundManager = {}
 
 -- Services
 local Players = game:GetService("Players")
@@ -9,14 +8,10 @@ local TweenService = game:GetService("TweenService")
 
 -- Modules
 local AssetsDealer = require(ReplicatedStorage:WaitForChild("AssetsDealer"))
-
--- Variables
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-local activeSounds = {}
+local Trove = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("trove"))
 
 -- Sound categories and their volume multipliers
-local soundCategories = {
+local SOUND_CATEGORIES = {
 	Global = 1,
 	Music = 0.8,
 	Effects = 0.9,
@@ -24,108 +19,149 @@ local soundCategories = {
 	Ambient = 0.6,
 }
 
--- Function to create a new sound instance
-function SoundManager.New(directory: string, parent: Instance?, category: string?)
-	assert(directory, "Sound directory is nil")
-	assert(parent, "Sound parent is nil")
-	if parent == "Global" then
-		parent = playerGui
-	end
+--[[
+	A wrapper object for Roblox Sound instances to provide a cleaner API
+	and automatic memory management.
+]]
+local SoundObject = {}
+SoundObject.__index = SoundObject
 
-	-- Fetch the sound instance using AssetsDealer
-	local sound = AssetsDealer.GetDir("Sounds", directory, "Clone")
+--[[
+	Creates a new SoundObject. This is intended for internal use by the SoundManager.
+	@param soundInstance {Sound} The raw Sound instance from Roblox.
+	@param category {string?} The sound category for volume modulation.
+	@returns {SoundObject}
+]]
+function SoundObject.new(soundInstance: Sound, category: string?)
+	local self = setmetatable({}, SoundObject)
+	self._sound = soundInstance
+	self._category = category or "Global"
+	self._trove = Trove.new()
+	self._trove:Add(self._sound) -- Ensure sound is destroyed when this object is.
 
-	if not sound or not sound:IsA("Sound") then
-		warn(`Invalid sound asset at "{directory}"`)
-		return
-	end
-
-	-- Set sound properties
-	sound.Volume = 0 -- Start at 0, will be adjusted when played
-	sound.Name = directory
-	sound.Parent = parent
-	sound.RollOffMode = Enum.RollOffMode.InverseTapered
-
-	-- Store category information
-	sound:SetAttribute("Category", category or "Global")
-
-	-- Store active sound for later management
-	table.insert(activeSounds, sound)
-
-	return sound
+	return self
 end
 
--- Function to play a sound
-function SoundManager.Play(sound: Sound, volume: number?, looped: boolean?, fadeInTime: number?)
-	if not sound or not sound:IsA("Sound") then
-		warn("Invalid sound instance")
-		return
-	end
-
-	-- Get category and calculate final volume
-	local category = sound:GetAttribute("Category") or "Global"
-	local categoryMultiplier = soundCategories[category] or 1
+--[[
+	Plays the sound with optional fade-in.
+	@param volume {number?} The volume to play at (0 to 1).
+	@param looped {boolean?} Whether the sound should loop.
+	@param fadeInTime {number?} The time in seconds to fade in the sound.
+]]
+function SoundObject:Play(volume: number?, looped: boolean?, fadeInTime: number?)
+	local categoryMultiplier = SOUND_CATEGORIES[self._category] or 1
 	local finalVolume = (volume or 1) * categoryMultiplier
 
-	-- Set sound properties
-	sound.Volume = fadeInTime and 0 or finalVolume
-	sound.Looped = looped or false
+	self._sound.Looped = looped or false
+	self._sound.Volume = fadeInTime and 0 or finalVolume
 
-	-- Play the sound
-	sound:Play()
+	self._sound:Play()
 
-	-- Tween
-	if fadeInTime then
-		local Tween = TweenService:Create(sound, TweenInfo.new(fadeInTime), { Volume = finalVolume })
-		Tween:Play()
+	if fadeInTime and fadeInTime > 0 then
+		local tween = TweenService:Create(self._sound, TweenInfo.new(fadeInTime), { Volume = finalVolume })
+		tween:Play()
+		self._trove:Add(tween)
 	end
-
-	-- Cleanup when sound finishes if it's not looped
-	if not sound.Looped then
-		sound.Ended:Connect(function()
-			SoundManager.StopSound(sound)
-		end)
-	end
-
-	return sound
 end
 
--- -- Function to play a sound directly (combines New and Play)
--- function SoundManager.PlaySound(directory: string, parent: Instance?, volume: number?, looped: boolean?, fadeInTime: number?, category: string?)
--- 	local sound = SoundManager.New(directory, parent, category)
--- 	if sound then
--- 		return SoundManager.Play(sound, volume, looped, fadeInTime)
--- 	end
--- end
+--[[ Stops the sound immediately. ]]
+function SoundObject:Stop()
+	self._sound:Stop()
+end
 
-function SoundManager.FadeOut(sound, fadeOutTime: number)
-	local tween = TweenService:Create(sound, TweenInfo.new(fadeOutTime), { Volume = 0 })
+--[[
+	Fades the sound out over a given duration and then stops it.
+	@param fadeOutTime {number} The time in seconds to fade out.
+]]
+function SoundObject:FadeOut(fadeOutTime: number?)
+	local time = fadeOutTime or 0.2
+	local tween = TweenService:Create(self._sound, TweenInfo.new(time), { Volume = 0 })
 	tween:Play()
-	tween.Completed:Wait()
-	sound:Stop()
+
+	self._trove:Add(tween.Completed:Connect(function()
+		self:Stop()
+	end))
 end
 
--- Function to stop a sound
-function SoundManager.StopSound(sound)
-	if sound and sound:IsA("Sound") then
-		sound:Stop()
-		sound:Destroy()
-
-		-- Remove from activeSounds
-		for i, activeSound in ipairs(activeSounds) do
-			if activeSound == sound then
-				table.remove(activeSounds, i)
-				break
-			end
-		end
-	end
+--[[
+	Connects a function to the sound's Ended event.
+	@param callback {function}
+	@returns {RBXScriptConnection}
+]]
+function SoundObject:OnEnded(callback: () -> ())
+	return self._sound.Ended:Connect(callback)
 end
 
--- Function to stop all currently playing sounds
-function SoundManager.StopAllSounds()
-	for _, sound in ipairs(activeSounds) do
-		SoundManager.StopSound(sound)
+--[[ Destroys the sound instance and cleans up any connections. ]]
+function SoundObject:Destroy()
+	self:Stop()
+	self._trove:Destroy()
+end
+
+--[[
+	The main SoundManager module. Provides factory functions for creating
+	and playing sounds.
+]]
+local SoundManager = {}
+
+type SoundOptions = {
+	directory: string,
+	parent: Instance?,
+	category: string?,
+	volume: number?,
+	looped: boolean?,
+	fadeInTime: number?,
+}
+
+--[[
+	Creates a managed SoundObject that can be controlled by the caller.
+	This is for sounds that need to be started, stopped, or managed over time (e.g., looping sounds).
+	The creator of the sound is responsible for calling :Destroy() on it when it's no longer needed.
+
+	@param options {SoundOptions}
+	@returns {SoundObject?}
+]]
+function SoundManager.createSound(options: SoundOptions): SoundObject?
+	local soundAsset = AssetsDealer.GetDir("Sounds", options.directory, "Clone")
+
+	if not soundAsset or not soundAsset:IsA("Sound") then
+		warn(`Invalid sound asset at "{options.directory}"`)
+		return nil
 	end
+
+	soundAsset.Parent = options.parent or RunService:IsClient() and Players.LocalPlayer:WaitForChild("PlayerGui")
+	soundAsset.Name = options.directory
+	soundAsset.RollOffMode = Enum.RollOffMode.InverseTapered
+	soundAsset.Volume = 0 -- Start silent
+
+	local soundObject = SoundObject.new(soundAsset, options.category)
+
+	-- Play immediately if volume or looped is specified in the creation options
+	if options.volume or options.looped then
+		soundObject:Play(options.volume, options.looped, options.fadeInTime)
+	end
+
+	return soundObject
+end
+
+--[[
+	Plays a sound once and automatically handles cleanup.
+	This is for "fire and forget" sound effects.
+
+	@param options {SoundOptions}
+]]
+function SoundManager.playSound(options: SoundOptions)
+	local soundObject = SoundManager.createSound(options)
+	if not soundObject then
+		return
+	end
+
+	-- For one-shot sounds, play them and destroy them on completion.
+	-- Looping is explicitly disallowed for this type of sound.
+	soundObject:Play(options.volume, false, options.fadeInTime)
+	soundObject:OnEnded(function()
+		soundObject:Destroy()
+	end)
 end
 
 return SoundManager
