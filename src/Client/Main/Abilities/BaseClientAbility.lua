@@ -4,8 +4,10 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BaseAbility = require(ReplicatedStorage.Abilities.BaseAbility)
-local BaseClientAbility = setmetatable({}, { __index = BaseAbility })
+
+local BaseClientAbility = {}
 BaseClientAbility.__index = BaseClientAbility
+setmetatable(BaseClientAbility, { __index = BaseAbility })
 
 -- Modules
 local Signal = require(ReplicatedStorage.Packages.signal)
@@ -119,30 +121,6 @@ function BaseClientAbility:setup()
 			warn("Failed to get animator for ability:", animatorErr)
 			return
 		end
-
-		-- Tool events
-		self.trove:Add(backpack.events.ToolEquip:Connect(function(_, index: number)
-			if index ~= self.tool:GetAttribute("Index") then
-				return
-			end
-			self.events.Equipped:Fire()
-		end))
-		self.trove:Add(backpack.events.ToolUnequip:Connect(function(_, index: number)
-			if index ~= self.tool:GetAttribute("Index") then
-				return
-			end
-			self.events.Unequipped:Fire()
-		end))
-
-		-- Hold animation
-		assert(self.toolConfig.animations.hold, `Hold animation is missing from tool "{self.tool.Name}".`)
-		self:loadAnimation("Hold", self.toolConfig.animations.hold)
-		self.events.Equipped:Connect(function()
-			self:playAnimation("Hold", 0)
-		end)
-		self.events.Unequipped:Connect(function()
-			self:stopAnimation("Hold", 0)
-		end)
 	end)
 end
 

@@ -21,15 +21,17 @@ local soundCategories = {
 	Music = 0.8,
 	Effects = 0.9,
 	UI = 0.7,
-	Ambient = 0.6
+	Ambient = 0.6,
 }
 
 -- Function to create a new sound instance
 function SoundManager.New(directory: string, parent: Instance?, category: string?)
 	assert(directory, "Sound directory is nil")
 	assert(parent, "Sound parent is nil")
-	if parent == "Global" then parent = playerGui end
-	
+	if parent == "Global" then
+		parent = playerGui
+	end
+
 	-- Fetch the sound instance using AssetsDealer
 	local sound = AssetsDealer.GetDir("Sounds", directory, "Clone")
 
@@ -74,11 +76,7 @@ function SoundManager.Play(sound: Sound, volume: number?, looped: boolean?, fade
 
 	-- Tween
 	if fadeInTime then
-		local Tween = TweenService:Create(
-			sound,
-			TweenInfo.new(fadeInTime),
-			{Volume = finalVolume}
-		)
+		local Tween = TweenService:Create(sound, TweenInfo.new(fadeInTime), { Volume = finalVolume })
 		Tween:Play()
 	end
 
@@ -92,16 +90,16 @@ function SoundManager.Play(sound: Sound, volume: number?, looped: boolean?, fade
 	return sound
 end
 
--- Function to play a sound directly (combines New and Play)
-function SoundManager.PlaySound(directory: string, parent: Instance?, volume: number?, looped: boolean?, fadeInTime: number?, category: string?)
-	local sound = SoundManager.New(directory, parent, category)
-	if sound then
-		return SoundManager.Play(sound, volume, looped, fadeInTime)
-	end
-end
+-- -- Function to play a sound directly (combines New and Play)
+-- function SoundManager.PlaySound(directory: string, parent: Instance?, volume: number?, looped: boolean?, fadeInTime: number?, category: string?)
+-- 	local sound = SoundManager.New(directory, parent, category)
+-- 	if sound then
+-- 		return SoundManager.Play(sound, volume, looped, fadeInTime)
+-- 	end
+-- end
 
 function SoundManager.FadeOut(sound, fadeOutTime: number)
-	local tween = TweenService:Create(sound, TweenInfo.new(fadeOutTime), {Volume = 0})
+	local tween = TweenService:Create(sound, TweenInfo.new(fadeOutTime), { Volume = 0 })
 	tween:Play()
 	tween.Completed:Wait()
 	sound:Stop()

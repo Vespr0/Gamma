@@ -24,10 +24,21 @@ function BaseResources.new(entity)
 	return self
 end
 
+function BaseResources:getResource(resourceName)
+	return self.resourcesData[resourceName]
+end
+
+function BaseResources:getResourceAmount(resourceName)
+	return self:getResource(resourceName).amount
+end
+
+function BaseResources:isResourceEmpty(resourceName)
+	return self:getResourceAmount(resourceName) <= 0
+end
+
 function BaseResources:setResource(resourceName, resourceData: ResourceData)
 	self.resourcesData[resourceName] = resourceData
 	self:onResourceChanged(resourceName, resourceData)
-	warn(self.resourcesData[resourceName])
 end
 
 function BaseResources:incrementResource(resourceName: string, amount: number)

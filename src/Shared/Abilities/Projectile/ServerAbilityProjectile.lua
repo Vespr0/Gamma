@@ -3,15 +3,23 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 local BaseServerAbility = require(ServerScriptService.Main.Abilities.BaseServerAbility)
+local BaseAbilityProjectile = require(ReplicatedStorage.Abilities.Projectile.BaseAbilityProjectile)
 local Remotes = ReplicatedStorage.Remotes
 -- Types
 local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
 -- Modules
 local DamageManager = require(ServerScriptService.Main.Abilities.DamageManager)
 -- local ProjectileManager = require(ReplicatedStorage.Abilities.ProjectileManager)
+
 -- Class
-local ServerAbilityProjectile = setmetatable({}, { __index = BaseServerAbility })
+local ServerAbilityProjectile = setmetatable({}, BaseServerAbility)
 ServerAbilityProjectile.__index = ServerAbilityProjectile
+
+for k, v in pairs(BaseAbilityProjectile) do
+	if ServerAbilityProjectile[k] == nil then
+		ServerAbilityProjectile[k] = v
+	end
+end
 -- Constants
 local ABILITY_NAME = "Projectile"
 
@@ -20,7 +28,7 @@ function ServerAbilityProjectile.new(entity, tool, config)
 		BaseServerAbility.new(ABILITY_NAME, entity, tool, config) :: TypeAbility.BaseServerAbility,
 		ServerAbilityProjectile
 	)
-
+	self.isServer = true
 	self:setup()
 
 	return self
@@ -36,9 +44,8 @@ function ServerAbilityProjectile:verifyOrigin(origin: Vector3): boolean
 end
 
 function ServerAbilityProjectile:fire(direction: Vector3, origin: Vector3, clientTimestamp: number)
-	-- Check for ammo
-	if self.abilityConfig.maxAmmo then
-		self.entity.resources:decrementResource(self.resourceName, 1)
+	if self:isOutOfAmmo() then
+		return
 	end
 
 	-- Check cooldown
@@ -46,6 +53,7 @@ function ServerAbilityProjectile:fire(direction: Vector3, origin: Vector3, clien
 		return
 	end
 	self:heat()
+	self:decrementAmmo()
 
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local GammaCast = require(ReplicatedStorage.Abilities.Projectile.GammaCast)
@@ -92,22 +100,6 @@ function ServerAbilityProjectile:processAction(actionName: string, arg1: any, ar
 		self:fire(direction, origin, clientTimestamp)
 		-- Replicate to other clients
 		self:sendAction(nil, actionName, direction, origin, clientTimestamp)
-	end
-end
-
-function ServerAbilityProjectile:setupResource()
-	self.resourceName = self.tool.Name .. "Ammo"
-
-	-- Initialize ammo resource
-	if self.abilityConfig.maxAmmo then
-		local displayName = self.abilityConfig.resourceDisplayName or self.tool.Name .. " Ammo"
-
-		self.entity.resources:setResource(self.resourceName, {
-			displayName = displayName,
-			type = "Ammo",
-			amount = self.abilityConfig.maxAmmo,
-			maxAmount = self.abilityConfig.maxAmmo,
-		})
 	end
 end
 

@@ -77,7 +77,6 @@ function Animator:setupAnimations()
 	self:load("Base", "Run", "Movement/Generic/Run", "Movement")
 	self:load("Base", "Jump", "Movement/Generic/Jump", "Action")
 	self:load("Base", "Freefall", "Movement/Generic/Freefall", "Idle")
-	-- self:load("Base","Hold","Tools/Generic/Hold")
 end
 
 function Animator:doesAnimationExist(folderName: string, actionName: string)

@@ -7,7 +7,7 @@ local HotbarInput = Inputs.GetModule("Hotbar")
 local BaseBackpack = require(ReplicatedStorage.Classes.Bases.BaseBackpack)
 local ToolUtility = require(ReplicatedStorage.Utility.ToolUtility)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
-local ClientAbilities = require(script.Parent.ClientAbilities)
+local ClientAbilityManager = require(script.Parent.ClientAbilityManager)
 local ConfigUtility = require(ReplicatedStorage.Configs.ConfigUtility)
 
 -- Class
@@ -94,7 +94,7 @@ function ClientBackpack:setup()
 	end
 
 	-- Connect client abilities instance
-	self.abilities = ClientAbilities.new(self)
+	self.abilities = ClientAbilityManager.new(self)
 
 	ClientBackpack.GlobalAdded:Fire(self)
 	ClientBackpack.Instances[self.entity.id] = self
@@ -152,6 +152,11 @@ function ClientBackpack:equipTool(index: number)
 		self.toolConfig = ConfigUtility.GetConfig("Tools", tool.Name)
 		-- Add Walkspeed boost
 		self.entity.movement.boosts.WalkSpeed["Tool-" .. self.equippedToolID] = self.toolConfig.walkSpeedBoost
+
+		-- Hold animation
+		assert(self.toolConfig.animations.hold, `Hold animation is missing from tool "{tool.Name}".`)
+		self.entity.animator:load(tool.Name, "Hold", self.toolConfig.animations.hold)
+		self.entity.animator:play(tool.Name, "Hold")
 	end
 end
 
@@ -169,9 +174,10 @@ function ClientBackpack:unequipTool()
 	-- Remove Walkspeed boost
 	self.entity.movement.boosts.WalkSpeed["Tool-" .. self.equippedToolID] = nil
 
-	self.equippedTool = nil
 	-- Stop hold animation
-	-- self.entity.animator:stop("Base","Hold")
+	self.entity.animator:stop(self.equippedTool.Name, "Hold")
+
+	self.equippedTool = nil
 end
 
 return ClientBackpack

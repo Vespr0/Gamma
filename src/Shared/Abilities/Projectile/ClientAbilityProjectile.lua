@@ -8,6 +8,7 @@ local ABILITY_NAME = "Projectile"
 -- Dependencies
 local Player = Players.LocalPlayer
 local BaseClientAbility = require(Player.PlayerScripts.Main.Abilities.BaseClientAbility)
+local BaseAbilityProjectile = require(ReplicatedStorage.Abilities.Projectile.BaseAbilityProjectile)
 local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
 local Inputs = require(Player.PlayerScripts.Main.Input.Inputs):get()
 -- local ProjectileManager = require(script.Parent.Parent.ProjectileManager)
@@ -15,22 +16,27 @@ local SoundManager = require(Player.PlayerScripts.Main.Sound.SoundManager)
 local BulletHoleVFX = require(Player.PlayerScripts.Main.Visual.VFXManager).GetModule("BulletHole")
 local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
 
-local ClientAbilityProjectile = setmetatable({}, { __index = BaseClientAbility })
+local ClientAbilityProjectile = setmetatable({}, BaseClientAbility)
 ClientAbilityProjectile.__index = ClientAbilityProjectile
+
+for k, v in pairs(BaseAbilityProjectile) do
+	if ClientAbilityProjectile[k] == nil then
+		ClientAbilityProjectile[k] = v
+	end
+end
 
 function ClientAbilityProjectile.new(entity, tool, config)
 	local self = setmetatable(
 		BaseClientAbility.new(ABILITY_NAME, entity, tool, config) :: TypeAbility.BaseClientAbility,
 		ClientAbilityProjectile
 	)
-
+	self.isServer = false
 	self:setup()
 
 	self.proceduralRecoil = self.entity.proceduralAnimationController:getComponent("ProceduralRecoil")
 
 	self.lastFireTime = os.clock()
 	print(self.entity)
-	-- self.recoilMotor = self.entity.motor6DManager:getModule("Motor6DRecoil")
 
 	return self
 end
@@ -45,7 +51,6 @@ function ClientAbilityProjectile:playFireSound()
 		if self.fireSound then
 			SoundManager.StopSound(self.fireSound)
 		end
-		self.fireSound = SoundManager.New(self.abilityConfig.sound, self:getCurrentFakeToolHandle(), "Effects")
 		SoundManager.Play(self.fireSound, 0.4, true, 0.1)
 		self.fireSound.RollOffMaxDistance = 100
 		self.fireSound.RollOffMinDistance = 20
@@ -57,12 +62,12 @@ function ClientAbilityProjectile:playFireSound()
 		SoundManager.StopSound(self.fireSound)
 		self.fireSound = nil
 	end
-	-- Create and play one-shot sound under PlayerGui
-	local parent = Player:WaitForChild("PlayerGui")
-	local newSound = SoundManager.New(self.abilityConfig.sound, parent, "Effects")
-	SoundManager.Play(newSound, 0.4)
-	newSound.RollOffMaxDistance = 100
-	newSound.RollOffMinDistance = 20
+	-- -- Create and play one-shot sound under PlayerGui
+	-- local parent = Player:WaitForChild("PlayerGui")
+	-- local newSound = SoundManager.New(self.abilityConfig.sound, parent, "Effects")
+	-- SoundManager.Play(newSound, 0.4)
+	-- newSound.RollOffMaxDistance = 100
+	-- newSound.RollOffMinDistance = 20
 	return
 end
 
@@ -201,6 +206,12 @@ function ClientAbilityProjectile:trigger(sendToServer: boolean, direction: Vecto
 	if self:isHot() then
 		return
 	end
+
+	if self:isOutOfAmmo() then
+		SoundManager.Play(self.emptySound, 0.1, false, 0)
+		return
+	end
+
 	self:heat()
 	local biasedDirection = self:fire(direction)
 	if sendToServer then
@@ -209,45 +220,43 @@ function ClientAbilityProjectile:trigger(sendToServer: boolean, direction: Vecto
 	self.lastFireTime = os.clock()
 end
 
-function ClientAbilityProjectile:setup()
-	-- Setup inputs for the local player
-	if self.entity.isLocalPlayerInstance then
-		self:setupInputs()
-	end
-
-	-- Tool unequipped handler
-	self.trove:Add(self.events.Unequipped:Connect(function()
-		self.isFiring = false
-		if self.fireSound then
-			SoundManager.FadeOut(self.fireSound, 0.2)
-		end
-	end))
-
+function ClientAbilityProjectile:onRenderStepped(dt)
 	-- Sound stop handler
-	self.trove:Add(RunService.RenderStepped:Connect(function()
-		if not self.fireSound then
-			return
-		end
-		if not self.abilityConfig.continuousFire then
-			return
-		end
-		if not self.fireSound.Playing then
-			return
-		end
-
+	if self.fireSound and self.abilityConfig.continuousFire and self.fireSound.Playing then
 		if os.clock() - self.lastFireTime > self.abilityConfig.cooldownDuration + 0.2 then
 			-- Stop sound if it's not firing
 			SoundManager.FadeOut(self.fireSound, 0.2)
 		end
-	end))
+	end
 
 	-- Continuous fire handler
-	self.trove:Add(RunService.RenderStepped:Connect(function()
-		if not self.isFiring then
-			return
-		end
+	if self.isFiring then
 		self:trigger(true, nil)
-	end))
+	end
+end
+
+function ClientAbilityProjectile:onToolEquip(tool, index)
+	self.isFiring = false
+
+	-- Sounds
+	task.spawn(function()
+		self:waitForFakeTool()
+		self.emptySound = SoundManager.New("Tools/Generic/EmptyGun", self:getCurrentFakeToolHandle(), "Effects")
+		self.fireSound = SoundManager.New(self.abilityConfig.sound, self:getCurrentFakeToolHandle(), "Effects")
+	end)
+end
+
+-- function ClientAbilityProjectile:onToolUnequip(tool, index)
+-- 	self.isFiring = false
+-- end
+
+function ClientAbilityProjectile:setup()
+	self:setupResource()
+
+	-- Setup inputs for the local player
+	if self.entity.isLocalPlayerInstance then
+		self:setupInputs()
+	end
 
 	-- Setup replication
 	self:readAction(function(actionName: string, arg1: any)

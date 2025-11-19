@@ -87,6 +87,12 @@ function BaseAbility:getCurrentFakeTool()
 	return self.entity.rig:FindFirstChildOfClass("Tool")
 end
 
+function BaseAbility:waitForFakeTool()
+	repeat
+		RunService.RenderStepped:Wait()
+	until self:getCurrentFakeTool() and self:getCurrentFakeTool().Model
+end
+
 function BaseAbility:getCurrentFakeToolHandle()
 	local tool = self:getCurrentFakeTool()
 	if not tool then

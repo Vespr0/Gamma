@@ -4,8 +4,10 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BaseAbility = require(ReplicatedStorage.Abilities.BaseAbility)
-local BaseServerAbility = setmetatable({}, {__index = BaseAbility})
+
+local BaseServerAbility = {}
 BaseServerAbility.__index = BaseServerAbility
+setmetatable(BaseServerAbility, {__index = BaseAbility})
 
 -- Modules
 local Signal = require(ReplicatedStorage.Packages.signal)

@@ -14,7 +14,7 @@ ServerBackpack.Instances = {}
 local BackpackMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Backpack")
 local ToolUtility = require(ReplicatedStorage.Utility.ToolUtility)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
-local ServerAbilities = require(script.Parent.ServerAbilities)
+local ServerAbilityManager = require(script.Parent.ServerAbilityManager)
 
 ServerBackpack.ItemID = 0
 
@@ -39,7 +39,7 @@ function ServerBackpack.new(entity: TypeEntity.ServerEntity)
 	ServerBackpack.Instances[entity.id] = self
 
 	-- Setup abilities
-	self.abilities = ServerAbilities.new(self)
+	self.abilities = ServerAbilityManager.new(self)
 
 	return self
 end
