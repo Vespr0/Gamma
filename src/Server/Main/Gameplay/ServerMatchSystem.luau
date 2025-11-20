@@ -28,7 +28,9 @@ local function teleportPlayersToSpawns(players, map)
 end
 
 function ServerMatchSystem.Init()
-	ServerMatchSystem.enterLobby("Classic")
+	task.spawn(function()
+		ServerMatchSystem.enterLobby("Classic")
+	end)
 end
 
 function ServerMatchSystem.enterLobby(configName: string)
@@ -66,7 +68,9 @@ function ServerMatchSystem.startMatch(configName: string)
 	-- Load the map
 	local map = MapLoader:load(config.Map)
 	teleportPlayersToSpawns(Players:GetPlayers(), map)
-	MobSpawner.Spawn("HockeyMaskGuy", map.Spawns:GetChildren()[1].CFrame + Vector3.new(10, 0, 0), "Red")
+
+	local GameplayEvents = script.Parent.GameplayEvents
+	require(GameplayEvents.GameplayEventTest1).Trigger()
 
 	-- Assign roles and notify clients
 	local players = Players:GetPlayers()

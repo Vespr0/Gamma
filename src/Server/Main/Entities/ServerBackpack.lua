@@ -84,7 +84,7 @@ function ServerBackpack:setup()
 	local function debugItems()
 		-- self:addTool(ToolUtility.GetFromName("Minigun", true))
 		self:addTool(ToolUtility.GetFromName("Pistol", true))
-		-- self:addTool(ToolUtility.GetFromName("Brick", true))
+		self:addTool(ToolUtility.GetFromName("Brick", true))
 	end
 
 	debugItems()

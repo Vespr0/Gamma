@@ -32,7 +32,7 @@ end
 
 function ServerAbilityProjectile:verifyOrigin(origin: Vector3): boolean
 	local distance = (origin - self.entity.rig.Head.Position).Magnitude
-	if distance > 3 then
+	if distance > 8 then
 		return false
 	end
 
@@ -74,6 +74,7 @@ function ServerAbilityProjectile:fire(direction: Vector3, origin: Vector3, clien
 	local result = GammaCast.CastServer(entityID, typeName, origin, direction, clientTimestamp, modifiers)
 	-- Apply damage using DamageManager if SimulationResult indicates a hit
 	if result and result.Rig then
+		print(result)
 		local targetEntityID = result.Rig:GetAttribute("ID")
 		local damage = self.abilityConfig.damage or 0
 		DamageManager.Damage(targetEntityID, entityID, damage)

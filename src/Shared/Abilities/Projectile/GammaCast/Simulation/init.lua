@@ -19,6 +19,7 @@ type EntityHitResult = Snapshots.EntityHitResult
 export type SimulationResult = {
 	Position: Vector3,
 	Rig: Model?,
+	Instance: BasePart?,
 	Normal: Vector3?,
 	Distance: number?,
 }
@@ -162,7 +163,6 @@ function Simulation:step(dt: number): SimulationResult?
 	local nextPosition = self.position + stepVec
 
 	-- Build two rays: compDir for lag-comp (full bullet length), stepVec for movement
-	local compDir = self.direction.Unit * self.bulletLength
 	local moveDir = stepVec
 
 	if self.debug then
@@ -180,7 +180,7 @@ function Simulation:step(dt: number): SimulationResult?
 
 	if IS_SERVER and lagCompTime ~= nil then
 		-- Lag-check ray against entities along full bullet length
-		local entityHit = Snapshots.RaycastEntities(self.authorRig, self.position, compDir, lagCompTime)
+		local entityHit = Snapshots.RaycastEntities(self.authorRig, self.position, moveDir, lagCompTime)
 		if entityHit then
 			Draw.point(entityHit.Position, DEBUG_COLORS.Compensated, nil, 0.5)
 			return { Rig = entityHit.Rig, Position = entityHit.Position }
@@ -206,7 +206,7 @@ function Simulation:step(dt: number): SimulationResult?
 		if self.debug then
 			Draw.point(hit.Position, IS_SERVER and DEBUG_COLORS.Server or DEBUG_COLORS.Client)
 		end
-		return { Position = hit.Position, Rig = hit.Instance, Normal = hit.Normal }
+		return { Position = hit.Position, Instance = hit.Instance, Normal = hit.Normal }
 	end
 
 	return nil
@@ -232,6 +232,7 @@ function Simulation:start(): SimulationResult?
 						1
 					)
 				end
+				print("1")
 				return { Rig = entityHit.Rig, Position = entityHit.Position }
 			end
 		end
@@ -257,6 +258,7 @@ function Simulation:start(): SimulationResult?
 				candidate = candidate.Parent
 			end
 			if rig then
+				print("2")
 				return { Rig = rig, Position = envHit.Position, Normal = envHit.Normal, Distance = envHit.Distance }
 			else
 				return {

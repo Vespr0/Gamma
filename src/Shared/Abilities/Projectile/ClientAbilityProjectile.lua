@@ -11,10 +11,11 @@ local BaseClientAbility = require(Player.PlayerScripts.Main.Abilities.BaseClient
 local AmmoComponent = require(ReplicatedStorage.Abilities.Projectile.AmmoComponent)
 local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
 local Inputs = require(Player.PlayerScripts.Main.Input.Inputs):get()
--- local ProjectileManager = require(script.Parent.Parent.ProjectileManager)
 local SoundManager = require(Player.PlayerScripts.Main.Sound.SoundManager)
 local BulletHoleVFX = require(Player.PlayerScripts.Main.Visual.VFXManager).GetModule("BulletHole")
-local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
+local ClientProjectileVisuals = require(script.Parent.ClientProjectileVisuals)
+local GammaCast = require(ReplicatedStorage.Abilities.Projectile.GammaCast)
+local Simulation = require(ReplicatedStorage.Abilities.Projectile.GammaCast.Simulation)
 
 local ClientAbilityProjectile = setmetatable({}, BaseClientAbility)
 ClientAbilityProjectile.__index = ClientAbilityProjectile
@@ -26,6 +27,7 @@ function ClientAbilityProjectile.new(entity, tool, config)
 	)
 	self.isServer = false
 	self.ammoComponent = AmmoComponent.new(self, entity)
+	self.visuals = ClientProjectileVisuals.new()
 	self:setup()
 
 	self.proceduralRecoil = self.entity.proceduralAnimationController:getComponent("ProceduralRecoil")
@@ -108,46 +110,23 @@ function ClientAbilityProjectile:fire(direction)
 	if self.abilityConfig.recoil and self.entity.isLocalPlayerInstance then
 		self.proceduralRecoil:applyRecoil(self.abilityConfig.recoil.vertical, self.abilityConfig.recoil.horizontal)
 	end
-	-- local root = self.entity.root
 
-	-- local muzzlePosition = self:getCurrentFakeToolMuzzlePosition()
-
-	-- Step 1: Raycast from the camera to determine the aim point
-	-- local rayOrigin = camera.CFrame.Position
-	-- local rayDirection = camera.CFrame.LookVector * 1000 -- cast far
-	-- local raycastParams = RaycastParams.new()
-	-- raycastParams.FilterDescendantsInstances = {self.entity.rig}
-	-- raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-
-	-- By default raycast to the camera direction to get the direction to shoot at whilist
-	-- keeping the origin at the muzzle position (no need to shoot from the camera position)
-	-- if not direction then
-	--     local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-	--     local targetPoint = raycastResult and raycastResult.Position or (rayOrigin + rayDirection)
-	--     direction = (targetPoint - muzzlePosition).Unit
-	-- end
 	local position = self:getOrigin()
 	local clientDirection = self:getBiasedDirection(self:getDirection())
 	direction = direction or clientDirection
 
-	local projectileConfig = self.abilityConfig.projectileConfig
-	projectileConfig.origin = position
-	projectileConfig.direction = direction
-	projectileConfig.raycastBlacklist = { self.entity.rig }
-	if self.entity.isLocalPlayerInstance then
-		table.insert(projectileConfig.raycastBlacklist, workspace.CurrentCamera)
-	end
-	projectileConfig.sourceEntityID = self.entity.id
-	projectileConfig.damage = self.abilityConfig.damage or 10
-	projectileConfig.clientReplicationBlacklist = { Player.UserId }
-
-	-- Fire using GammaCast
-	local ReplicatedStorage = game:GetService("ReplicatedStorage")
-	local GammaCast = require(ReplicatedStorage.Abilities.Projectile.GammaCast)
 	local typeName = self.abilityConfig.projectileType or "Bullet"
-	local origin = position
 	local modifiers = self.abilityConfig.projectileModifiers or nil
-	GammaCast.CastClient(self.entity.id, typeName, origin, direction, modifiers)
+
+	-- Create the simulation object
+	local simulation = Simulation.new(self.entity.id, typeName, position, direction, nil, modifiers, true)
+
+	-- Delegate the simulation and visual playback to the visual component
+	self.visuals:play(simulation)
+
+	-- Fire to server WITH the client's current time for lag compensation
+	local clientTimestamp = workspace:GetServerTimeNow()
+	GammaCast.RemoteEvent:FireServer(typeName, position, direction, clientTimestamp, modifiers)
 
 	return direction
 end
@@ -203,10 +182,20 @@ function ClientAbilityProjectile:trigger(sendToServer: boolean, direction: Vecto
 	end
 
 	self:heat()
-	local biasedDirection = self:fire(direction)
+
+	-- Get the biased direction *before* spawning a new thread
+	local biasedDirection = self:getBiasedDirection(self:getDirection())
+
+	-- Send the notification to the server immediately
 	if sendToServer then
 		self:sendFire(biasedDirection)
 	end
+
+	-- Run the client-side simulation in a separate, non-blocking thread
+	task.spawn(function()
+		self:fire(biasedDirection)
+	end)
+
 	self.lastFireTime = os.clock()
 end
 
@@ -268,6 +257,7 @@ function ClientAbilityProjectile:destroy()
 		self.fireSound:Destroy()
 		self.fireSound = nil
 	end
+	self.visuals:destroy()
 	self:destroySub()
 end
 

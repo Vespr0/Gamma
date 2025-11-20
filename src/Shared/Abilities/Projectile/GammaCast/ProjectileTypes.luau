@@ -3,6 +3,9 @@ local DEFAULT_SETTINGS = {
 	range = 200,
 	length = 10,
 	timeStep = 1 / 60,
+	thickness = 0.2,
+	color = Color3.new(1, 1, 0),
+	material = Enum.Material.Neon,
 }
 
 return {
@@ -14,5 +17,8 @@ return {
 		length = DEFAULT_SETTINGS.range,
 		timeStep = DEFAULT_SETTINGS.timeStep,
 		hitscan = false,
+		thickness = 0.8,
+		color = Color3.fromRGB(200, 80, 80),
+		material = Enum.Material.Plastic,
 	},
 }
