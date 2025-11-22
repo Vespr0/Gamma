@@ -139,8 +139,6 @@ function ClientBackpack:equipTool(index: number)
 		if existingHandle then
 			existingHandle:Destroy()
 		end
-		-- Tool equipped local event
-		self.events.ToolEquip:Fire(tool, tool:GetAttribute("Index"), self.handleMotor6D)
 		-- Dummy tool
 		local dummyTool = tool:Clone()
 		dummyTool.Parent = self.entity.rig
@@ -148,6 +146,8 @@ function ClientBackpack:equipTool(index: number)
 		self.equippedToolID = tool:GetAttribute("ID")
 		-- Attach handle
 		self:attachHandle(dummyTool)
+		-- Tool equipped local event
+		self.events.ToolEquip:Fire(tool, tool:GetAttribute("Index"), self.handleMotor6D)
 		-- Config
 		self.toolConfig = ConfigUtility.GetConfig("Tools", tool.Name)
 		-- Add Walkspeed boost
@@ -171,6 +171,13 @@ function ClientBackpack:unequipTool()
 	if dummyTool then
 		dummyTool:Destroy()
 	end
+	
+	-- Remove handle motor
+	if self.handleMotor6D then
+		self.handleMotor6D:Destroy()
+		self.handleMotor6D = nil
+	end
+
 	-- Remove Walkspeed boost
 	self.entity.movement.boosts.WalkSpeed["Tool-" .. self.equippedToolID] = nil
 

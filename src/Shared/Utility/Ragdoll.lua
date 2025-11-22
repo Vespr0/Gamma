@@ -49,7 +49,7 @@ end
 -- Spin to make ragdolls more visually good
 function Ragdoll:applySpin()
 	local root = self.rig.PrimaryPart :: BasePart
-	root.AssemblyAngularVelocity = root.AssemblyAngularVelocity + Vector3.new(0, 10, 0)
+	root.AssemblyAngularVelocity = root.AssemblyAngularVelocity + Vector3.new(10, 10, 0)
 end
 
 -- Helper to create a BallSocketConstraint between two parts, with attachments matching Motor6D's C0 and C1
@@ -128,6 +128,8 @@ function Ragdoll:EnableRagdoll()
 			self._sockets[#self._sockets + 1] = { constraint = constraint, att0 = att0, att1 = att1 }
 		end
 	end
+
+	self:applySpin()
 
 	-- for _, part in ipairs(rig:GetDescendants()) do
 	-- 	if part:IsA("BasePart") then

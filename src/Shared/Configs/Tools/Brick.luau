@@ -16,9 +16,6 @@ return {
 			sound = "Tools/Generic/Throw",
 			continuousFire = false,
 			projectileType = "Brick",
-			projectileConfig = {
-				hitscan = false,
-			},
 		},
 	},
 

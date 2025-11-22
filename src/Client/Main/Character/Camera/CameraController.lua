@@ -33,8 +33,14 @@ function Camera.new(anima)
 	}
 
 	self:setup()
+	
+	Camera.Singleton = self
 
 	return self
+end
+
+function Camera.Get()
+	return Camera.Singleton
 end
 
 function Camera:sumOffsets()
@@ -57,6 +63,10 @@ function Camera:setup()
 			warn("Invalid mode or missing step function.")
 		end
 		self.offset = self:sumOffsets()
+		
+		if self.anima.entity and self.anima.entity.humanoid then
+			self.anima.entity.humanoid.CameraOffset = self.offset
+		end
 	end)
 end
 

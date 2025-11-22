@@ -100,6 +100,19 @@ function ViewmodelManager:setupToolEvents()
 	for _, tool in self.backpack:getTools() do
 		self:createFakeTool(tool)
 	end
+	
+	-- Handle already equipped tool
+	if self.backpack.equippedTool then
+		local tool = self.backpack.equippedTool
+		local ID = tool:GetAttribute("ID")
+		local fakeTool = self.fakeTools[ID]
+		if fakeTool then
+			fakeTool:show()
+			self.currentFakeTool = fakeTool
+			self.characterHandleMotor = self.backpack.handleMotor6D
+		end
+	end
+
 	self.backpack.events.ToolAdded:Connect(function(tool)
 		self:createFakeTool(tool)
 	end)
@@ -174,7 +187,7 @@ function ViewmodelManager:configureRigAppearance()
 	modelsFolder.Parent = self.rig
 
 	self:processRigParts()
-	self:adjustShoulderMotors()
+	-- self:adjustShoulderMotors() This is problematic for animations
 	self.rig:ScaleTo(VIEWMODEL_SCALE)
 end
 
@@ -182,7 +195,7 @@ function ViewmodelManager:processRigParts()
 	for _, child in self.rig:GetChildren() do
 		if child:IsA("BasePart") then
 			self:configurePartVisibility(child)
-			child.Transparency = 0.1
+			-- child.Transparency = 0
 			child.CanCollide = false
 			child.CastShadow = false
 		elseif not table.find(VIEWMODEL_WHITELIST, child.Name) then
@@ -212,7 +225,7 @@ function ViewmodelManager:updateRigPosition()
 		return
 	end
 	local cameraCFrame = CAMERA.CFrame
-	local origin = cameraCFrame + (cameraCFrame.LookVector / 2) - (cameraCFrame.UpVector * (VIEWMODEL_SCALE + 1 / 2))
+	local origin = cameraCFrame + (cameraCFrame.LookVector / 2) - (cameraCFrame.UpVector * (VIEWMODEL_SCALE + 1 / 4))
 	self.rig:PivotTo(origin)
 end
 

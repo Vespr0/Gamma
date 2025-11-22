@@ -9,7 +9,7 @@ local _TweenService = game:GetService("TweenService")
 local Trove = require(ReplicatedStorage.Packages.trove)
 local Lerp = require(ReplicatedStorage.Utility.Lerp)
 local MovementMiddleware = require(ReplicatedStorage.Middleware.MiddlewareManager).Get("Movement")
-
+local CameraController = require(script.Parent.Parent.Character.Camera.CameraController)
 local EntityUtility = require(ReplicatedStorage.Utility.Entity)
 local Inputs = require(script.Parent.Parent.Input.Inputs)
 local SprintingInput = Inputs.GetModule("Sprinting")
@@ -79,10 +79,6 @@ function Movement:setupSprinting()
             ]]
 			self.isCrouching = mode
 			self.entity.rig:SetAttribute("Crouching", mode)
-			-- Add camera offsetr
-
-			-- TODO
-			-- getClientAnima().camera.offsets.Crouching = mode and Vector3.new(0, 0.5, 0) or Vector3.zero
 
 			-- Set the crouching attribute on the server and consequently on all the other clients
 			MovementMiddleware.SendMovementAction:Fire("Crouching", mode)
@@ -105,6 +101,14 @@ function Movement:setupSprinting()
 		local crouchGoal = self.isCrouching and -CROUCHING_PENALTY or 0
 		local crouchLerp = Lerp(self.boosts.WalkSpeed.Crouching, crouchGoal, deltaTime * TRANSITION_SPEED)
 		self.boosts.WalkSpeed.Crouching = math.clamp(crouchLerp, -CROUCHING_PENALTY, 0)
+		
+		-- Camera Crouch Offset
+		local camera = CameraController.Get()
+		if camera then
+			local offsetGoal = self.isCrouching and -2 or 0
+			self.crouchOffset = Lerp(self.crouchOffset or 0, offsetGoal, deltaTime * 10) -- Faster transition for camera
+			camera.offsets.Crouching = Vector3.new(0, self.crouchOffset, 0)
+		end
 
 		-- Airborne upward push
 		local state = self.entity.humanoid:GetState()

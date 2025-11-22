@@ -17,9 +17,6 @@ return {
 			},
 			sound = "Tools/Minigun/FireLoop",
 			continuousFire = true,
-			projectileConfig = {
-				hitscan = true,
-			},
 		},
 	},
 

@@ -22,6 +22,7 @@ local ProceduralAnimationController = require(script.Parent.ProceduralAnimation.
 local ProceduralCrouching = require(script.Parent.ProceduralAnimation.Components.ProceduralCrouching)
 local ProceduralRecoil = require(script.Parent.ProceduralAnimation.Components.ProceduralRecoil)
 local ClientResources = require(script.Parent.ClientResources)
+local Footsteps = require(script.Parent.Footsteps)
 
 -- Variables
 local LocalPlayer = Players.LocalPlayer
@@ -96,6 +97,7 @@ end
 
 function ClientEntity:setupMovement()
 	self.movement = ClientMovement.new(self, self.isLocalPlayerInstance)
+	self.footsteps = Footsteps.new(self)
 	-- no longer overriding default movement; just enhanced air control via ClientJumping
 end
 
@@ -124,6 +126,7 @@ function ClientEntity:destroy()
 	end
 
 	self.proceduralAnimationController:destroy()
+	self.footsteps:destroy()
 
 	ClientEntity.Instances[tostring(self.id)] = nil
 

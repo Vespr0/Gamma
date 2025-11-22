@@ -15,6 +15,9 @@ The project has important core concepts:
 
 - Concept of ENTITY: An entity is the physical body, the rig of an NPC or player, it's a vessel, the players and npcs both have an entity associated to them.
 
+  - The game has a lot of client entities but only one of those entities is the client player's entity.
+  - The game has a lot of server entities but only one of those entities is the server player's entity.
+
 - Concept of BACKPACK: The backpack is an abstract concept that allows both NPCS and players to have tools , equip them, unequip them and just have them in general.
 
 - Concept of ABILITY: Tools have one or more abilities. Abilities let you do something when you have a certain tool equipped. Both NPCS and Players use the same abilities code,

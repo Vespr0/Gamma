@@ -2,29 +2,15 @@ local Animator = {}
 Animator.__index = Animator
 
 -- Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 -- Modulesv
-local Signal = require(ReplicatedStorage.Packages.signal)
 local AssetsDealer = require(ReplicatedStorage.AssetsDealer)
 local Trove = require(ReplicatedStorage.Packages.trove)
-local Game = require(ReplicatedStorage.Utility.Game)
-
--- Variables
-local Player = Players.LocalPlayer
-Animator.Instances = {}
-Animator.GlobalAdded = Signal.new()
+-- local Game = require(ReplicatedStorage.Utility.Game)
 
 -- Constants for animation fading factors
 local FADING_IN_FACTOR = 1 / 3
 local FADING_OUT_FACTOR = 1 / 4
-
-function Animator.Get(key)
-	assert(key, `Key must not be nil.`)
-	return Animator.Instances[key]
-end
 
 function Animator.Print()
 	print("Animator Instances:")
@@ -36,12 +22,6 @@ end
 function Animator.new(rig, isLocalPlayerInstance)
 	local id = rig:GetAttribute("ID")
 	assert(id, `ID Attribute of rig "{rig.Name}" is nil.`)
-	assert(not Animator.Get(id), `Animator instance with ID "{id}" already exists. Attempt on rig "{rig.Name}".`)
-	for _, animator in Animator.Instances do
-		if animator.rig == rig then
-			error(`An animator instance for rig "{rig.Name}" has already been created and is active.`)
-		end
-	end
 
 	local self = setmetatable({}, Animator)
 
@@ -64,9 +44,6 @@ function Animator.new(rig, isLocalPlayerInstance)
 
 	self.isLocalPlayerInstance = isLocalPlayerInstance
 	self.key = isLocalPlayerInstance and "Local" or self.id
-	Animator.Instances[self.key] = self
-	Animator.GlobalAdded:Fire(self)
-
 	return self
 end
 
@@ -212,7 +189,6 @@ function Animator:destroy()
 			track:Stop()
 		end
 	end
-	Animator.Instances[self.id] = nil
 	table.clear(self)
 end
 

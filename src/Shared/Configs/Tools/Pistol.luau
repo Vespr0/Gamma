@@ -18,9 +18,17 @@ return {
 			maxAmmo = 6,
 			sound = "Tools/Generic/GunShot",
 			continuousFire = false,
-			projectileConfig = {
-				hitscan = false,
+		},
+		reload = {
+			name = "ResourceRegeneration",
+			cooldownDuration = 2,
+			regenerationType = "Full",
+			resource = "Ammo",
+			inputs = {
+				activate = { Enum.KeyCode.R },
 			},
+			sound = "Tools/Generic/Reload",
+			animation = "Tools/Generic/Pistol/Reload",
 		},
 	},
 

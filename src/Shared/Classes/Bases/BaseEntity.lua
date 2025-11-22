@@ -71,21 +71,16 @@ function BaseEntity:setupRig()
 	end
 	-- Rig's primary part
 	self.root = self.rig.PrimaryPart or warn(`Entity "{self.rig.Name}" with id "{self.id}" has no primary part.`)
-	-- Height of the rig
-	self.height = self.rig:GetExtentsSize().Y :: number
 
-	-- TODO: Possible performance issue?
+	-- TODO: Centralize heart beats
 	self.trove:Add(RunService.Heartbeat:Connect(function()
-		if not EntityUtility.IsAlive(self.rig) or not EntityUtility.IsHealthy(self.rig) then
+		if EntityUtility.IsAlive(self.rig) then
+			-- Height of the rig -- TODO: Potential optimization, maybe update it less frequently?
+			self.height = self.rig:GetExtentsSize().Y :: number
+		else
 			self.events.Died:Fire()
 		end
 	end))
-	-- self.trove:Add(self.humanoid.Died:Connect(function()
-	-- 	self.events.Died:Fire()
-	-- end))
-	-- self.trove:Add(self.rig.Destroying:Connect(function()
-	-- 	self.events.Died:Fire()
-	-- end))
 end
 
 function BaseEntity:destroyBase()

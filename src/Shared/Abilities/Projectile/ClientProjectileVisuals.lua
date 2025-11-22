@@ -1,4 +1,3 @@
---!strict
 -- This component is responsible for creating and managing the visual
 -- representation of a projectile on the client.
 local Debris = game:GetService("Debris")
@@ -12,23 +11,23 @@ local ClientProjectileVisuals = {}
 ClientProjectileVisuals.__index = ClientProjectileVisuals
 
 function ClientProjectileVisuals.new()
+	if RunService:IsServer() then
+		warn("ClientProjectileVisuals is a client-only component")
+		return
+	end
+	
 	return setmetatable({}, ClientProjectileVisuals)
 end
 
 function ClientProjectileVisuals:play(simulation: any)
-	if RunService:IsServer() then
-		-- This is a client-only component
-		return
-	end
-
 	-- For hitscan, we just draw a single beam and destroy it.
 	if simulation.hitscan then
 		local result = simulation:start()
 		if result and result.Position then
-			local def = ProjectileTypes[simulation.typeName] or ProjectileTypes.Default
-			local thickness = def.thickness or 0.2
-			local color = def.color or Color3.new(1, 1, 0)
-			local material = def.material or Enum.Material.Neon
+			local config = (ProjectileTypes :: any)[simulation.typeName] or ProjectileTypes.Default
+			local thickness = config.thickness or 0.2
+			local color = config.color or Color3.new(1, 1, 0)
+			local material = config.material or Enum.Material.Neon
 
 			local visualBeam = Instance.new("Part")
 			visualBeam.Material = material
@@ -43,17 +42,17 @@ function ClientProjectileVisuals:play(simulation: any)
 			visualBeam.Size = Vector3.new(thickness, thickness, moveVec.Magnitude)
 			visualBeam.CFrame = CFrame.lookAt(simulation.origin, result.Position)
 				* CFrame.new(0, 0, -moveVec.Magnitude / 2)
-			Debris:AddItem(visualBeam, 0.1)
+			Debris:AddItem(visualBeam, 0.5)
 		end
 		return
 	end
 
 	-- For traveling projectiles, we create a part and update it each frame.
 	task.spawn(function()
-		local def = ProjectileTypes[simulation.typeName] or ProjectileTypes.Default
-		local thickness = def.thickness or 0.3
-		local color = def.color or Color3.new(1, 1, 0)
-		local material = def.material or Enum.Material.Neon
+		local config = (ProjectileTypes :: any)[simulation.typeName] or ProjectileTypes.Default
+		local thickness = config.thickness or 0.3
+		local color = config.color or Color3.fromRGB(255, 0, 255)
+		local material = config.material or Enum.Material.SmoothPlastic
 
 		local visualPart = Instance.new("Part")
 		visualPart.Anchored = true

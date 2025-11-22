@@ -10,6 +10,7 @@ local TypeAbility = require(ReplicatedStorage.Types.TypeAbility)
 -- Modules
 local DamageManager = require(ServerScriptService.Main.Abilities.DamageManager)
 -- local ProjectileManager = require(ReplicatedStorage.Abilities.ProjectileManager)
+local TrustSystem = require(ServerScriptService.Main.Gameplay.TrustSystem)
 
 -- Class
 local ServerAbilityProjectile = setmetatable({}, BaseServerAbility)
@@ -17,6 +18,7 @@ ServerAbilityProjectile.__index = ServerAbilityProjectile
 
 -- Constants
 local ABILITY_NAME = "Projectile"
+local BAD_ORIGIN_TRUST_PENALTY = -5
 
 function ServerAbilityProjectile.new(entity, tool, config)
 	local self = setmetatable(
@@ -28,15 +30,6 @@ function ServerAbilityProjectile.new(entity, tool, config)
 	self:setup()
 
 	return self
-end
-
-function ServerAbilityProjectile:verifyOrigin(origin: Vector3): boolean
-	local distance = (origin - self.entity.rig.Head.Position).Magnitude
-	if distance > 8 then
-		return false
-	end
-
-	return true
 end
 
 function ServerAbilityProjectile:fire(direction: Vector3, origin: Vector3, clientTimestamp: number)
@@ -82,11 +75,37 @@ function ServerAbilityProjectile:fire(direction: Vector3, origin: Vector3, clien
 
 	for _, otherPlayer in ipairs(Players:GetPlayers()) do
 		if otherPlayer == player then
-			return
+			continue
 		end
 
 		GammaCast.RemoteEvent:FireClient(otherPlayer, entityID, typeName, origin, direction, modifiers)
 	end
+end
+
+function ServerAbilityProjectile:verifyOrigin(origin: Vector3): boolean
+	local distance = (origin - self.entity.rig.Head.Position).Magnitude
+	if distance <= 3 then
+		return true
+	end
+
+	-- Check for wall penetration
+	local headPos = self.entity.rig.Head.Position
+	local directionToOrigin = (origin - headPos).Unit
+	local distanceToOrigin = distance
+	
+	local raycastParams = RaycastParams.new()
+	raycastParams.FilterDescendantsInstances = {self.entity.rig}
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	
+	local rayResult = workspace:Raycast(headPos, directionToOrigin * distanceToOrigin, raycastParams)
+	
+	if rayResult then
+		-- Hit a wall, but we allow it and decrease trust
+		TrustSystem.ChangeTrust(self.entity.player, BAD_ORIGIN_TRUST_PENALTY)
+		return true
+	end
+
+	return false
 end
 
 function ServerAbilityProjectile:processAction(actionName: string, arg1: any, arg2: any, arg3: any)

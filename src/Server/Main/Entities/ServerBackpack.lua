@@ -1,5 +1,5 @@
 -- Services
-local Players = game:GetService("Players")
+-- local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Modules
 local BaseBackpack = require(ReplicatedStorage.Classes.Bases.BaseBackpack)
@@ -82,7 +82,6 @@ function ServerBackpack:setup()
 	end
 
 	local function debugItems()
-		-- self:addTool(ToolUtility.GetFromName("Minigun", true))
 		self:addTool(ToolUtility.GetFromName("Pistol", true))
 		self:addTool(ToolUtility.GetFromName("Brick", true))
 	end
