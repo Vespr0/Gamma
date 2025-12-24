@@ -164,8 +164,10 @@ function ClientAbilityProjectile:sendFire(biasedDirection: Vector3)
 end
 
 function ClientAbilityProjectile:trigger(sendToServer: boolean, direction: Vector3)
-	if self:isHot() then
-		return
+	if sendToServer then
+		if self:isHot() then
+			return
+		end
 	end
 
 	if self.ammoComponent:isOutOfAmmo() then
@@ -246,6 +248,9 @@ function ClientAbilityProjectile:setup()
 	-- Setup replication
 	self:readAction(function(actionName: string, arg1: any)
 		if actionName == "Fire" then
+			if self.entity.isLocalPlayerInstance then
+				return
+			end
 			local direction = arg1
 			self:trigger(false, direction)
 		end

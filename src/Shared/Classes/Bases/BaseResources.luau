@@ -29,7 +29,11 @@ function BaseResources:getResource(resourceName)
 end
 
 function BaseResources:getResourceAmount(resourceName)
-	return self:getResource(resourceName).amount
+	local resource = self:getResource(resourceName)
+	if not resource then
+		return 0
+	end
+	return resource.amount
 end
 
 function BaseResources:isResourceEmpty(resourceName)

@@ -30,6 +30,9 @@ function ClientAbilityResourceRegeneration:setup()
 
 	self:readAction(function(actionName)
 		if actionName == "Reload" then
+			if self.entity.isLocalPlayerInstance then
+				return
+			end
 			-- Play reload animation/sound
 			self:playReloadEffects()
 		end
